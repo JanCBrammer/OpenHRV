@@ -82,19 +82,19 @@ class SensorClient(QObject):
         Acceleration and raw ECG only available via Polar SDK
         """
         bytes = list(data)
-        hr = None
-        ibis = []
-        if bytes[0] == 00:
-            hr = data[1]
+        # hr = None
+        # ibis = []
+        # if bytes[0] == 00:
+        #     hr = data[1]
         if bytes[0] == 16:
-            hr = data[1]
+            # hr = data[1]
             for i in range(2, len(bytes), 2):
                 ibi = data[i] + 256 * data[i + 1]
                 ibi = ceil(ibi / 1024 * 1000)    # convert 1/1024 sec format to milliseconds
-                ibis.append(ibi)
-        if ibis:
-            for ibi in ibis:
+        #         ibis.append(ibi)
+        # if ibis:
+        #     for ibi in ibis:
                 print(f"IBI: {ibi}")
                 self.ibi_update.emit(ibi)
-        if hr:
-            print(f"HR: {hr}")
+        # if hr:
+        #     print(f"HR: {hr}")
