@@ -1,5 +1,5 @@
 import asyncio
-from PySide2.QtCore import QObject, Signal, Slot
+from PySide2.QtCore import QObject, Signal
 from bleak import BleakClient, BleakScanner
 from math import ceil
 from config import HR_UUID
@@ -19,7 +19,7 @@ class SensorScanner(QObject):
         self.mac_update.emit(polar_devices)
 
     def scan(self):
-        print("Searching sensors!")
+        print("Searching for sensors...")
         asyncio.run(self._scan())
 
 
@@ -30,35 +30,37 @@ class SensorClient(QObject):
     def __init__(self):
         super().__init__()
         self.ble_client = None
-        self._connected = False
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
 
-    @Slot(bool)
-    def set_connected(self, value):
-        self._connected = value
+    def start(self, mac):
+        self.loop.create_task(self._connect_client(mac))
+        self.loop.run_forever()
+
+    def stop(self):
+        self.loop.create_task(self._disconnect_client())    # executes as soon as ble_client is idle in between notifications
 
     async def _connect_client(self, mac):
         self.ble_client = BleakClient(mac)
-        print(f"Trying to connect to Polar belt {mac}")
+        print(f"Trying to connect to Polar belt {mac}...")
         await self.ble_client.connect()
         await self.ble_client.is_connected()
-        print(f"Connected to Polar belt {mac}")
-        self._connected = True
-        await self.listen_for_notifications()
-
-    async def listen_for_notifications(self):
+        print(f"Connected to Polar belt {mac}.")
         await self.ble_client.start_notify(HR_UUID, self.data_handler)
-        while self._connected:
-            await asyncio.sleep(3)
+
+    async def _disconnect_client(self):
+        if self.ble_client is None:
+            print("No client.")
+            return
+        connected = await self.ble_client.is_connected()
+        if not connected:
+            print("Waiting until client is connected before disconnecting.")
+            return
         await self.ble_client.stop_notify(HR_UUID)
         await self.ble_client.disconnect()
-        print("Disconnected")
-
-    def start_notification(self, mac):
-        if self._connected:
-            print("Already connected!")
-            return
-        print("Starting")
-        asyncio.run(self._connect_client(mac))
+        self.ble_client = None
+        self.loop.stop()
+        print("Disconnected client.")
 
     def data_handler(self, sender, data):    # sender (UUID) unused but required by Bleak API
         """

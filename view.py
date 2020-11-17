@@ -38,6 +38,7 @@ class View(QMainWindow):
         self.scanner.mac_update.connect(self.model.set_mac_addresses)
 
         self.sensor = SensorClient()
+        self.current_mac.connect(self.sensor.start)
         self.sensor.ibi_update.connect(self.model.set_ibis_buffer)
 
         self.ibis_plot = pg.PlotWidget()
@@ -85,11 +86,10 @@ class View(QMainWindow):
         self.mac_menu = QComboBox()
 
         self.start_button = QPushButton("Start")
-        self.current_mac.connect(self.sensor.start_notification)
-        self.start_button.clicked.connect(lambda clicked: self.current_mac.emit(self.mac_menu.currentText()))
+        self.start_button.clicked.connect(self.start_sensor)
 
         self.stop_button = QPushButton("Stop")
-        self.stop_button.clicked.connect(lambda clicked: self.sensor.set_connected(False))
+        self.stop_button.clicked.connect(self.stop_sensor)
 
         self.hrv_label = QLabel("Current HRV:")
         self.hrv_label.setFont(QFont("Arial", 25))
@@ -144,7 +144,21 @@ class View(QMainWindow):
         self.sensor.moveToThread(self.sensor_thread)
         self.sensor_thread.start()
 
-    def compute_local_hrv(self, ibis):
+    def start_sensor(self):
+        if self.sensor.loop.is_running():
+            print("Client already running.")
+            return
+        mac = self.mac_menu.currentText()
+        # TODO: return in case of invalid mac
+        self.current_mac.emit(mac)    # starts sensor
+
+    def stop_sensor(self):
+        if not self.sensor.loop.is_running():
+            print("No client running.")
+            return
+        self.sensor.stop()
+
+    def compute_local_hrv(self, ibis):    # TODO: move to model
 
         current_ibi_phase = np.sign(ibis[-1] - ibis[-2])    # 1: IBI rises, -1: IBI falls, 0: IBI constant
         if current_ibi_phase == 0:
