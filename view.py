@@ -1,5 +1,6 @@
 import numpy as np
 import pyqtgraph as pg
+from utils import valid_mac
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox, QSlider)
 from PySide2.QtCore import QRunnable, QThreadPool, Qt, QThread, Signal
@@ -149,7 +150,9 @@ class View(QMainWindow):
             print("Client already running.")
             return
         mac = self.mac_menu.currentText()
-        # TODO: return in case of invalid mac
+        if not valid_mac(mac):
+            print("Invalid MAC.")
+            return
         self.current_mac.emit(mac)    # starts sensor
 
     def stop_sensor(self):
