@@ -1,9 +1,9 @@
 import numpy as np
 import pyqtgraph as pg
-from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
+from PyQt5.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox, QSlider)
-from PySide2.QtCore import QRunnable, QThreadPool, Qt, QThread, Signal
-from PySide2.QtGui import QFont, QIcon
+from PyQt5.QtCore import QRunnable, QThreadPool, Qt, QThread, Signal
+from PyQt5.QtGui import QFont, QIcon
 from sensor import SensorScanner, SensorClient
 
 

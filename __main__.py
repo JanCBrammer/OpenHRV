@@ -1,5 +1,6 @@
 import sys
-from PySide2.QtWidgets import QApplication
+#from PySide2.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication
 from view import View
 from model import Model
 from pacer import Pacer

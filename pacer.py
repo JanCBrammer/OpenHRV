@@ -1,6 +1,6 @@
 import numpy as np
 import time
-from PySide2.QtCore import QTimer, QObject
+from PyQt5.QtCore import QTimer, QObject
 
 
 class Pacer(QObject):

@@ -1,5 +1,8 @@
 import numpy as np
-from PySide2.QtCore import QObject, Signal, Slot, Property
+from PyQt5.QtCore import QObject
+from PyQt5.QtCore import pyqtProperty as Property
+from PyQt5.QtCore import pyqtSignal as Signal
+from PyQt5.QtCore import pyqtSlot as Slot
 
 
 class Model(QObject):

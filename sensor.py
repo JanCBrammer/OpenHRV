@@ -1,5 +1,6 @@
 import asyncio
-from PySide2.QtCore import QObject, Signal
+from PyQt5.QtCore import QObject
+from PyQt5.QtCore import pyqtSignal as Signal
 from bleak import BleakClient, BleakScanner
 from math import ceil
 from config import HR_UUID
