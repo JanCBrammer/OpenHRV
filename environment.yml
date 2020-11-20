@@ -1,0 +1,11 @@
+name: OpenHRV
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - pyqtgraph
+  - python=3.8
+  - pyside2
+  - pip
+  - pip:
+    - bleak
