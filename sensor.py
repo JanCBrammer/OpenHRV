@@ -1,6 +1,7 @@
 import asyncio
 from PySide2.QtCore import QObject, Signal
 from bleak import BleakClient, BleakScanner
+from bleak.exc import BleakError
 from math import ceil
 from config import HR_UUID
 
@@ -24,45 +25,78 @@ class SensorScanner(QObject):
 
 
 class SensorClient(QObject):
+    """Stay connected to the current MAC.
+
+    Perpetually trying to reconnect to the current MAC after external or
+    internal disconnection.
+
+    external disconnection:
+        - sensor lost skin contact
+        - BLE out of range
+
+    internal disconnection:
+        - other parts of the application actively request disconnection
+    """
 
     ibi_update = Signal(object)
 
     def __init__(self):
         super().__init__()
-        self.ble_client = None
+        self._ble_client = None
+        self._connected = False
+        self._mac = None
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
-    def start(self, mac):
-        self.loop.create_task(self._connect_client(mac))
+    def run(self):
         self.loop.run_forever()
 
-    def stop(self):
-        self.loop.create_task(self._disconnect_client())    # executes as soon as ble_client is idle in between notifications
-
-    async def _connect_client(self, mac):
-        self.ble_client = BleakClient(mac)
-        print(f"Trying to connect to Polar belt {mac}...")
-        await self.ble_client.connect()
-        await self.ble_client.is_connected()
-        print(f"Connected to Polar belt {mac}.")
-        await self.ble_client.start_notify(HR_UUID, self.data_handler)
-
-    async def _disconnect_client(self):
-        if self.ble_client is None:
-            print("No client.")
+    async def set_mac(self, mac):
+        if mac == self._mac:
+            print(f"Already connected to {mac} or currently reconnecting.")
             return
-        connected = await self.ble_client.is_connected()
-        if not connected:
-            print("Waiting until client is connected before disconnecting.")
-            return
-        await self.ble_client.stop_notify(HR_UUID)
-        await self.ble_client.disconnect()
-        self.ble_client = None
-        self.loop.stop()
-        print("Disconnected client.")
+        self._mac = mac
+        await self._reconnect()
 
-    def data_handler(self, sender, data):    # sender (UUID) unused but required by Bleak API
+    async def _connect(self):
+        """Perpetually try to connect to current MAC."""
+        while not self._connected:
+            try:
+                print(f"Connecting to {self._mac}")
+                self._ble_client = BleakClient(self._mac,
+                                               disconnected_callback=self._on_disconnect)
+                await self._ble_client.connect()    # potential exceptions: BleakError (device not found), asyncio TimeoutError
+                self._connected = await self._ble_client.is_connected()
+            except (BleakError, asyncio.exceptions.TimeoutError) as error:
+                print(error)
+                print("Retrying...")
+        print(f"Starting notification for {self._mac}.")
+        await self._ble_client.start_notify(HR_UUID, self._data_handler)
+
+    def _on_disconnect(self, client):    # client unused but mandatory positional argument
+        """Try to (re-)connect to current MAC in case of disconnection.
+
+        Called in the event of external or internal disconnection of the BLE
+        client.
+        """
+        print("Reconnecting...")
+        self._connected = False
+        self._ble_client = None    # not strictly necessary to reset to None
+        self.loop.create_task(self._connect())
+
+    async def _reconnect(self):
+        """Handle internal disconnection."""
+        print("Internal reconnection request.")
+        if self._connected:
+            await self._ble_client.stop_notify(HR_UUID)
+            print("Shut down notification.")
+            await self._ble_client.disconnect()    # triggers _on_disconnect()
+            print("Disconnected client.")
+        else:    # True on the initial call
+            print("Client already disconnected.")
+            self._on_disconnect(self._ble_client)
+
+    def _data_handler(self, caller, data):    # caller (UUID) unused but mandatory positional argument
         """
         IMPORTANT: Polar H10 (H9) records IBIs in 1/1024 seconds format, i.e.
         not milliseconds!
@@ -84,19 +118,9 @@ class SensorClient(QObject):
         Acceleration and raw ECG only available via Polar SDK
         """
         bytes = list(data)
-        # hr = None
-        # ibis = []
-        # if bytes[0] == 00:
-        #     hr = data[1]
         if bytes[0] == 16:
-            # hr = data[1]
             for i in range(2, len(bytes), 2):
                 ibi = data[i] + 256 * data[i + 1]
                 ibi = ceil(ibi / 1024 * 1000)    # convert 1/1024 sec format to milliseconds
-        #         ibis.append(ibi)
-        # if ibis:
-        #     for ibi in ibis:
                 print(f"IBI: {ibi}")
                 self.ibi_update.emit(ibi)
-        # if hr:
-        #     print(f"HR: {hr}")

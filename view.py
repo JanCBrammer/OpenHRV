@@ -1,28 +1,15 @@
 import numpy as np
 import pyqtgraph as pg
+import asyncio
 from utils import valid_mac
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox, QSlider)
-from PySide2.QtCore import QRunnable, QThreadPool, Qt, QThread, Signal
+from PySide2.QtCore import Qt, QThread
 from PySide2.QtGui import QFont, QIcon
 from sensor import SensorScanner, SensorClient
 
 
-class Worker(QRunnable):
-
-    def __init__(self, fn, *args, **kwargs):
-        super(Worker, self).__init__()
-        self.fn = fn
-        self.args = args
-        self.kwargs = kwargs
-
-    def run(self):
-        self.fn(*self.args, **self.kwargs)
-
-
 class View(QMainWindow):
-
-    current_mac = Signal(str)
 
     def __init__(self, model, pacer):
         super().__init__()
@@ -33,14 +20,17 @@ class View(QMainWindow):
 
         self.model = model
         self.pacer = pacer
-        self.threadpool = QThreadPool()
 
         self.scanner = SensorScanner()
+        self.scanner_thread = QThread()
+        self.scanner.moveToThread(self.scanner_thread)
         self.scanner.mac_update.connect(self.model.set_mac_addresses)
 
         self.sensor = SensorClient()
-        self.current_mac.connect(self.sensor.start)
+        self.sensor_thread = QThread(self)
+        self.sensor.moveToThread(self.sensor_thread)
         self.sensor.ibi_update.connect(self.model.set_ibis_buffer)
+        self.sensor_thread.started.connect(self.sensor.run)
 
         self.ibis_plot = pg.PlotWidget()
         self.ibis_plot.setBackground("w")
@@ -86,11 +76,8 @@ class View(QMainWindow):
 
         self.mac_menu = QComboBox()
 
-        self.start_button = QPushButton("Start")
-        self.start_button.clicked.connect(self.start_sensor)
-
-        self.stop_button = QPushButton("Stop")
-        self.stop_button.clicked.connect(self.stop_sensor)
+        self.connect_button = QPushButton("Connect")
+        self.connect_button.clicked.connect(self.connect_sensor)
 
         self.hrv_label = QLabel("Current HRV:")
         self.hrv_label.setFont(QFont("Arial", 25))
@@ -119,8 +106,7 @@ class View(QMainWindow):
         self.hlayout1.addWidget(self.scan_button)
         self.hlayout1.addWidget(self.mac_menu)
 
-        self.hlayout2.addWidget(self.start_button)
-        self.hlayout2.addWidget(self.stop_button)
+        self.hlayout2.addWidget(self.connect_button)
         self.hlayout2.addWidget(self.hrv_label)
         self.hlayout2.addWidget(self.hrv_display)
 
@@ -136,30 +122,16 @@ class View(QMainWindow):
         self.model.pacer_rate_update.connect(self.update_pacer_label)
 
         self.pacer.start()
-
-        self.scanner_thread = QThread(self)
-        self.scanner.moveToThread(self.scanner_thread)
         self.scanner_thread.start()
-
-        self.sensor_thread = QThread(self)
-        self.sensor.moveToThread(self.sensor_thread)
         self.sensor_thread.start()
 
-    def start_sensor(self):
-        if self.sensor.loop.is_running():
-            print("Client already running.")
-            return
+    def connect_sensor(self):
         mac = self.mac_menu.currentText()
         if not valid_mac(mac):
             print("Invalid MAC.")
             return
-        self.current_mac.emit(mac)    # starts sensor
-
-    def stop_sensor(self):
-        if not self.sensor.loop.is_running():
-            print("No client running.")
-            return
-        self.sensor.stop()
+        asyncio.run_coroutine_threadsafe(self.sensor.set_mac(mac),
+                                         self.sensor.loop)
 
     def compute_local_hrv(self, ibis):    # TODO: move to model
 
