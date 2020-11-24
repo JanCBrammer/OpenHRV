@@ -1,4 +1,3 @@
-import numpy as np
 import pyqtgraph as pg
 import asyncio
 from utils import valid_mac
@@ -115,7 +114,6 @@ class View(QMainWindow):
         self.vlayout1.addWidget(self.pacer_label, stretch=15)
 
         self.model.ibis_buffer_update.connect(self.plot_ibis)
-        self.model.ibis_buffer_update.connect(self.compute_local_hrv)
         self.model.hrv_buffer_update.connect(self.plot_local_hrv)
         self.model.mac_addresses_update.connect(self.list_macs)
         self.model.pacer_disk_update.connect(self.plot_pacer_disk)
@@ -133,32 +131,11 @@ class View(QMainWindow):
         asyncio.run_coroutine_threadsafe(self.sensor.reconnect_internal(mac),
                                          self.sensor.loop)
 
-    def compute_local_hrv(self, ibis):    # TODO: move to model
-
-        current_ibi_phase = np.sign(ibis[-1] - ibis[-2])    # 1: IBI rises, -1: IBI falls, 0: IBI constant
-        if current_ibi_phase == 0:
-            return
-        if current_ibi_phase != self.model.last_ibi_phase:
-
-            current_ibi_extreme = ibis[-2]
-            local_hrv = abs(self.model.last_ibi_extreme - current_ibi_extreme)
-
-            # potentially enforce constraints on local power here
-            updated_hrv_buffer = self.model.hrv_buffer    # copy avoids emission of model.hrv_buffer_update
-            updated_hrv_buffer = np.roll(updated_hrv_buffer, -1)
-            updated_hrv_buffer[-1] = local_hrv
-            self.model.hrv_buffer = updated_hrv_buffer
-
-            print(f"Local hrv: {local_hrv}!")
-
-            self.model.last_ibi_extreme = current_ibi_extreme
-            self.model.last_ibi_phase = current_ibi_phase
-
     def plot_ibis(self, ibis):
         self.ibis_signal.setData(self.model.seconds, ibis)
 
     def plot_local_hrv(self, hrv):
-        self.hrv_display.setText(str(hrv[-1]))
+        self.hrv_display.setText(str(hrv))
 
     def list_macs(self, macs):
         self.mac_menu.clear()

@@ -31,9 +31,33 @@ class Model(QObject):
     def set_ibis_buffer(self, value):
         self._ibis_buffer = np.roll(self._ibis_buffer, -1)
         self._ibis_buffer[-1] = value
+        self.compute_local_hrv()
         self._seconds = np.linspace(-sum(self._ibis_buffer) / 1000, 0,
                                     self._ibis_buffer.size)
         self.ibis_buffer_update.emit(self.ibis_buffer)
+
+    def compute_local_hrv(self):
+
+        current_ibi_phase = np.sign(self._ibis_buffer[-1] - self._ibis_buffer[-2])    # 1: IBI rises, -1: IBI falls, 0: IBI constant
+        if current_ibi_phase == 0:
+            return
+        if current_ibi_phase != self._last_ibi_phase:
+
+            current_ibi_extreme = self._ibis_buffer[-2]
+            local_hrv = abs(self._last_ibi_extreme - current_ibi_extreme)
+
+            # potentially enforce constraints on local power here
+
+            self.hrv_buffer_update.emit(local_hrv)
+            print(f"Local hrv: {local_hrv}!")
+
+            updated_hrv_buffer = self._hrv_buffer
+            updated_hrv_buffer = np.roll(updated_hrv_buffer, -1)
+            updated_hrv_buffer[-1] = local_hrv
+            self._hrv_buffer = updated_hrv_buffer
+
+            self._last_ibi_extreme = current_ibi_extreme
+            self._last_ibi_phase = current_ibi_phase
 
     @property
     def seconds(self):
@@ -60,15 +84,6 @@ class Model(QObject):
     def pacer_coordinates(self, value):
         self._pacer_coordinates = value
         self.pacer_disk_update.emit(value)
-
-    @property
-    def hrv_buffer(self):
-        return self._hrv_buffer
-
-    @hrv_buffer.setter
-    def hrv_buffer(self, value):
-        self._hrv_buffer = value
-        self.hrv_buffer_update.emit(value)
 
     @property
     def current_ibi_phase(self):
