@@ -130,7 +130,7 @@ class View(QMainWindow):
         if not valid_mac(mac):
             print("Invalid MAC.")
             return
-        asyncio.run_coroutine_threadsafe(self.sensor.set_mac(mac),
+        asyncio.run_coroutine_threadsafe(self.sensor.reconnect_internal(mac),
                                          self.sensor.loop)
 
     def compute_local_hrv(self, ibis):    # TODO: move to model

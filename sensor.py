@@ -27,15 +27,22 @@ class SensorScanner(QObject):
 class SensorClient(QObject):
     """Stay connected to the current MAC.
 
-    Perpetually trying to reconnect to the current MAC after external or
-    internal disconnection.
+    Perpetually try to reconnect to the current MAC after external or internal
+    disconnection.
 
-    external disconnection:
+    Notes
+    -----
+    - external disconnection:
         - sensor lost skin contact
-        - BLE out of range
+        - sensor out of range
 
-    internal disconnection:
-        - other parts of the application actively request disconnection
+    - internal disconnection:
+        - other parts of the application (e.g., View) actively request
+        disconnection
+
+    `await this` means "do `this` and wait for it to return". In the meantime,
+    if `this` chooses to suspend execution, other tasks which have already
+    started elsewhere may run.
     """
 
     ibi_update = Signal(object)
@@ -43,58 +50,64 @@ class SensorClient(QObject):
     def __init__(self):
         super().__init__()
         self._ble_client = None
-        self._connected = False
+        self._listening = False
         self._mac = None
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
     def run(self):
+        """Start the (empty) asyncio event loop."""
         self.loop.run_forever()
 
-    async def set_mac(self, mac):
-        if mac == self._mac:
-            print(f"Already connected to {mac} or currently reconnecting.")
-            return
-        self._mac = mac
-        await self._reconnect()
-
-    async def _connect(self):
-        """Perpetually try to connect to current MAC."""
-        while not self._connected:
-            try:
-                print(f"Connecting to {self._mac}")
-                self._ble_client = BleakClient(self._mac,
-                                               disconnected_callback=self._on_disconnect)
-                await self._ble_client.connect()    # potential exceptions: BleakError (device not found), asyncio TimeoutError
-                self._connected = await self._ble_client.is_connected()
-            except (BleakError, asyncio.exceptions.TimeoutError) as error:
-                print(error)
-                print("Retrying...")
-        print(f"Starting notification for {self._mac}.")
-        await self._ble_client.start_notify(HR_UUID, self._data_handler)
-
-    def _on_disconnect(self, client):    # client unused but mandatory positional argument
-        """Try to (re-)connect to current MAC in case of disconnection.
-
-        Called in the event of external or internal disconnection of the BLE
-        client.
-        """
-        print("Reconnecting...")
-        self._connected = False
-        self._ble_client = None    # not strictly necessary to reset to None
-        self.loop.create_task(self._connect())
-
-    async def _reconnect(self):
+    async def reconnect_internal(self, mac):
         """Handle internal disconnection."""
         print("Internal reconnection request.")
-        if self._connected:
+        tasks = asyncio.all_tasks(self.loop)
+        if len(tasks) > 1:
+            # Necessary to ensure sequential execution of reconnection requests.
+            # Yes, this contradicts the asynchronous paradigm. However, bleak is
+            # currently the only Python package that somewhat reliably works
+            # with BLE on Windows. Hence, forcing bleak to play nicely with the
+            # otherwise synchronous Qt event loop seems to be an option to
+            # prevent severely messed up Sensor state (given my current, limited
+            # knowledge of asyncio).
+            print("Waiting for current task to finish...")
+            return
+        self._mac = mac
+        try:
             await self._ble_client.stop_notify(HR_UUID)
             print("Shut down notification.")
-            await self._ble_client.disconnect()    # triggers _on_disconnect()
+            self._ble_client.set_disconnected_callback(None)    # deregister disconnection callback to prevent reconnection attempt
+            await self._ble_client.disconnect()
             print("Disconnected client.")
-        else:    # True on the initial call
-            print("Client already disconnected.")
-            self._on_disconnect(self._ble_client)
+        except (Exception, BleakError) as error:
+            print(f"Reconnection exception: {error}.")
+        await self._connect()
+
+    def _reconnect_external(self, client):
+        """Handle external disconnection."""
+        self.loop.create_task(self._connect())
+
+    async def _connect(self):
+        """Perpetually try to connect to current MAC.
+
+        Handle internal and external disconnections.
+        """
+        self._ble_client = BleakClient(self._mac,
+                                       disconnected_callback=self._reconnect_external)
+        print(f"client: {self._ble_client}")
+        self._listening = False
+        while not self._listening:
+            try:
+                print(f"Connecting to {self._mac}")
+                await self._ble_client.connect()    # potential exceptions: BleakError (device not found), asyncio TimeoutError
+                await self._ble_client.is_connected()
+                print(f"Starting notification for {self._mac}.")
+                await self._ble_client.start_notify(HR_UUID, self._data_handler)
+                self._listening = True
+            except (BleakError, asyncio.exceptions.TimeoutError, Exception) as error:
+                print(f"Connection exception: {error}")
+                print("Retrying...")
 
     def _data_handler(self, caller, data):    # caller (UUID) unused but mandatory positional argument
         """
