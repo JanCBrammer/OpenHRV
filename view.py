@@ -135,7 +135,7 @@ class View(QMainWindow):
         self.ibis_signal.setData(self.model.seconds, ibis)
 
     def plot_local_hrv(self, hrv):
-        self.hrv_display.setText(str(hrv))
+        self.hrv_display.setText(str(hrv[-1]))
 
     def list_macs(self, macs):
         self.mac_menu.clear()

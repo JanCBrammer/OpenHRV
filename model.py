@@ -1,5 +1,21 @@
+import redis
 import numpy as np
+from config import REDIS_HOST, REDIS_PORT
 from PySide2.QtCore import QObject, Signal, Slot, Property
+from functools import wraps
+
+
+redis_host = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+
+
+def publish_to_redis(func):
+    @wraps(func)
+    def publish_attribute(model, attribute):
+        func(model, attribute)
+        if isinstance(attribute, np.ndarray):
+            attribute = float(attribute[-1])
+        redis_host.set("custom_key", attribute)
+    return publish_attribute
 
 
 class Model(QObject):
@@ -37,7 +53,6 @@ class Model(QObject):
         self.ibis_buffer_update.emit(self.ibis_buffer)
 
     def compute_local_hrv(self):
-
         current_ibi_phase = np.sign(self._ibis_buffer[-1] - self._ibis_buffer[-2])    # 1: IBI rises, -1: IBI falls, 0: IBI constant
         if current_ibi_phase == 0:
             return
@@ -47,17 +62,25 @@ class Model(QObject):
             local_hrv = abs(self._last_ibi_extreme - current_ibi_extreme)
 
             # potentially enforce constraints on local power here
-
-            self.hrv_buffer_update.emit(local_hrv)
             print(f"Local hrv: {local_hrv}!")
 
-            updated_hrv_buffer = self._hrv_buffer
+            updated_hrv_buffer = self.hrv_buffer
             updated_hrv_buffer = np.roll(updated_hrv_buffer, -1)
             updated_hrv_buffer[-1] = local_hrv
-            self._hrv_buffer = updated_hrv_buffer
+            self.hrv_buffer = updated_hrv_buffer
 
             self._last_ibi_extreme = current_ibi_extreme
             self._last_ibi_phase = current_ibi_phase
+
+    @property
+    def hrv_buffer(self):
+        return self._hrv_buffer
+
+    @hrv_buffer.setter
+    # @publish_to_redis
+    def hrv_buffer(self, value):
+        self._hrv_buffer = value
+        self.hrv_buffer_update.emit(value)
 
     @property
     def seconds(self):
@@ -72,6 +95,7 @@ class Model(QObject):
         return self._breathing_rate
 
     @Slot(int)
+    # @publish_to_redis
     def set_breathing_rate(self, value):
         self._breathing_rate = value
         self.pacer_rate_update.emit(value)
