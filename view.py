@@ -114,7 +114,7 @@ class View(QMainWindow):
         self.vlayout1.addWidget(self.pacer_label, stretch=15)
 
         self.model.ibis_buffer_update.connect(self.plot_ibis)
-        self.model.hrv_buffer_update.connect(self.plot_local_hrv)
+        self.model.mean_hrv_update.connect(self.plot_local_hrv)
         self.model.mac_addresses_update.connect(self.list_macs)
         self.model.pacer_disk_update.connect(self.plot_pacer_disk)
         self.model.pacer_rate_update.connect(self.update_pacer_label)

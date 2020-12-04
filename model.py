@@ -1,9 +1,9 @@
+from utils import find_indices_to_average
 import redis
-import numpy as np
 from config import REDIS_HOST, REDIS_PORT
 from PySide2.QtCore import QObject, Signal, Slot, Property
 from functools import wraps
-
+import numpy as np
 
 redis_host = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
 
@@ -22,7 +22,7 @@ class Model(QObject):
 
     # Costum signals.
     ibis_buffer_update = Signal(object)
-    hrv_buffer_update = Signal(object)
+    mean_hrv_update = Signal(object)
     mac_addresses_update = Signal(object)
     pacer_disk_update = Signal(object)
     pacer_rate_update = Signal(object)
@@ -30,14 +30,16 @@ class Model(QObject):
     def __init__(self):
         super().__init__()
 
-        self._ibis_buffer = np.ones(60, dtype=int) * 1000
-        self._seconds = np.linspace(-sum(self._ibis_buffer) / 1000, 0, 60)
-        self._hrv_buffer = np.ones(5, dtype=int)
+        self._ibis_buffer = np.array([1000] * 60, dtype=np.int)
+        self._seconds = np.arange(-60, 0, dtype=np.float)
+        self._hrv_buffer = np.ones(5, dtype=np.int)
+        self._mean_hrv_buffer = np.ones(50, dtype=np.int)
         self._current_ibi_phase = -1
         self._last_ibi_phase = -1
         self._last_ibi_extreme = 0
         self._mac_addresses = []
         self._breathing_rate = 6
+        self._hrv_mean_window = 10
 
     @Property(object)
     def ibis_buffer(self):
@@ -47,10 +49,11 @@ class Model(QObject):
     def set_ibis_buffer(self, value):
         self._ibis_buffer = np.roll(self._ibis_buffer, -1)
         self._ibis_buffer[-1] = value
-        self.compute_local_hrv()
-        self._seconds = np.linspace(-sum(self._ibis_buffer) / 1000, 0,
-                                    self._ibis_buffer.size)
+        self._seconds = self._seconds - value / 1000
+        self._seconds = np.roll(self._seconds, -1)
+        self._seconds[-1] = -value / 1000
         self.ibis_buffer_update.emit(self.ibis_buffer)
+        self.compute_local_hrv()
 
     def compute_local_hrv(self):
         current_ibi_phase = np.sign(self._ibis_buffer[-1] - self._ibis_buffer[-2])    # 1: IBI rises, -1: IBI falls, 0: IBI constant
@@ -60,14 +63,9 @@ class Model(QObject):
 
             current_ibi_extreme = self._ibis_buffer[-2]
             local_hrv = abs(self._last_ibi_extreme - current_ibi_extreme)
-
+            self.hrv_buffer = local_hrv
             # potentially enforce constraints on local power here
             print(f"Local hrv: {local_hrv}!")
-
-            updated_hrv_buffer = self.hrv_buffer
-            updated_hrv_buffer = np.roll(updated_hrv_buffer, -1)
-            updated_hrv_buffer[-1] = local_hrv
-            self.hrv_buffer = updated_hrv_buffer
 
             self._last_ibi_extreme = current_ibi_extreme
             self._last_ibi_phase = current_ibi_phase
@@ -79,8 +77,21 @@ class Model(QObject):
     @hrv_buffer.setter
     # @publish_to_redis
     def hrv_buffer(self, value):
-        self._hrv_buffer = value
-        self.hrv_buffer_update.emit(value)
+        self._hrv_buffer = np.roll(self._hrv_buffer, -1)
+        self._hrv_buffer[-1] = value
+        average_idcs = find_indices_to_average(self._seconds[-self._hrv_buffer.size:],
+                                               self._hrv_mean_window)
+        self.mean_hrv_buffer = self._hrv_buffer[average_idcs].mean()
+
+    @property
+    def mean_hrv_buffer(self):
+        return self._mean_hrv_buffer
+
+    @mean_hrv_buffer.setter
+    def mean_hrv_buffer(self, value):
+        self._mean_hrv_buffer = np.roll(self._mean_hrv_buffer, -1)
+        self._mean_hrv_buffer[-1] = value
+        self.mean_hrv_update.emit(self._mean_hrv_buffer)
 
     @property
     def seconds(self):
