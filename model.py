@@ -1,9 +1,10 @@
-from utils import find_indices_to_average
 import redis
 from config import REDIS_HOST, REDIS_PORT
 from PySide2.QtCore import QObject, Signal, Slot, Property
 from functools import wraps
 import numpy as np
+from utils import find_indices_to_average
+
 
 redis_host = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
 
@@ -59,16 +60,17 @@ class Model(QObject):
         current_ibi_phase = np.sign(self._ibis_buffer[-1] - self._ibis_buffer[-2])    # 1: IBI rises, -1: IBI falls, 0: IBI constant
         if current_ibi_phase == 0:
             return
-        if current_ibi_phase != self._last_ibi_phase:
+        if current_ibi_phase == self._last_ibi_phase:
+            return
 
-            current_ibi_extreme = self._ibis_buffer[-2]
-            local_hrv = abs(self._last_ibi_extreme - current_ibi_extreme)
-            self.hrv_buffer = local_hrv
-            # potentially enforce constraints on local power here
-            print(f"Local hrv: {local_hrv}!")
+        current_ibi_extreme = self._ibis_buffer[-2]
+        local_hrv = abs(self._last_ibi_extreme - current_ibi_extreme)
+        self.hrv_buffer = local_hrv
+        # potentially enforce constraints on local power here
+        print(f"Local hrv: {local_hrv}!")
 
-            self._last_ibi_extreme = current_ibi_extreme
-            self._last_ibi_phase = current_ibi_phase
+        self._last_ibi_extreme = current_ibi_extreme
+        self._last_ibi_phase = current_ibi_phase
 
     @property
     def hrv_buffer(self):
@@ -110,6 +112,15 @@ class Model(QObject):
     def set_breathing_rate(self, value):
         self._breathing_rate = value
         self.pacer_rate_update.emit(value)
+
+    @Property(int)
+    def hrv_mean_window(self):
+        return self._hrv_mean_window
+
+    @Slot(int)
+    # @publish_to_redis
+    def set_hrv_mean_window(self, value):
+        self._hrv_mean_window = value
 
     @property
     def pacer_coordinates(self):

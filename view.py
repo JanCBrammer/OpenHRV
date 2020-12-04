@@ -2,7 +2,8 @@ import pyqtgraph as pg
 import asyncio
 from utils import valid_mac
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
-                               QVBoxLayout, QWidget, QLabel, QComboBox, QSlider)
+                               QVBoxLayout, QWidget, QLabel, QComboBox,
+                               QSlider, QSpinBox)
 from PySide2.QtCore import Qt, QThread
 from PySide2.QtGui import QFont, QIcon
 from sensor import SensorScanner, SensorClient
@@ -85,6 +86,15 @@ class View(QMainWindow):
         self.hrv_display.setText("0")
         self.hrv_display.setFont(QFont("Arial", 50))
 
+        self.hrv_smoothwindow_label = QLabel("HRV smoothing window")
+
+        self.hrv_smoothwindow = QSpinBox()
+        self.hrv_smoothwindow.setRange(0, 15)
+        self.hrv_smoothwindow.setSingleStep(1)
+        self.hrv_smoothwindow.setSuffix(" seconds")
+        self.hrv_smoothwindow.valueChanged.connect(self.model.set_hrv_mean_window)
+        self.hrv_smoothwindow.setValue(self.model.hrv_mean_window)
+
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
@@ -108,6 +118,8 @@ class View(QMainWindow):
         self.hlayout2.addWidget(self.connect_button)
         self.hlayout2.addWidget(self.hrv_label)
         self.hlayout2.addWidget(self.hrv_display)
+        self.hlayout2.addWidget(self.hrv_smoothwindow_label)
+        self.hlayout2.addWidget(self.hrv_smoothwindow)
 
         self.vlayout1.addWidget(self.pacer_plot, stretch=70)
         self.vlayout1.addWidget(self.pacer_rate, stretch=15)
