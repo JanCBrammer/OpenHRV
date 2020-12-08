@@ -1,5 +1,6 @@
 import redis
-from config import REDIS_HOST, REDIS_PORT
+from config import (REDIS_HOST, REDIS_PORT, MEANHRV_BUFFER_SIZE,
+                    HRV_BUFFER_SIZE, IBI_BUFFER_SIZE)
 from PySide2.QtCore import QObject, Signal, Slot, Property
 from functools import wraps
 import numpy as np
@@ -31,16 +32,19 @@ class Model(QObject):
     def __init__(self):
         super().__init__()
 
-        self._ibis_buffer = np.array([1000] * 60, dtype=np.int)
-        self._seconds = np.arange(-60, 0, dtype=np.float)
-        self._hrv_buffer = np.ones(5, dtype=np.int)
-        self._mean_hrv_buffer = np.ones(50, dtype=np.int)
+        self._ibis_buffer = np.array([1000] * IBI_BUFFER_SIZE, dtype=np.int)
+        self._ibis_seconds = np.arange(-IBI_BUFFER_SIZE, 0, dtype=np.float)
+        self._hrv_buffer = np.ones(HRV_BUFFER_SIZE, dtype=np.int)
+        self._mean_hrv_buffer = np.ones(MEANHRV_BUFFER_SIZE, dtype=np.int)
+        self._mean_hrv_seconds = np.arange(-MEANHRV_BUFFER_SIZE, 0,
+                                           dtype=np.float)
         self._current_ibi_phase = -1
         self._last_ibi_phase = -1
         self._last_ibi_extreme = 0
         self._mac_addresses = []
         self._breathing_rate = 6
         self._hrv_mean_window = 10
+        self._duration_current_phase = 0
 
     @Property(object)
     def ibis_buffer(self):
@@ -50,13 +54,14 @@ class Model(QObject):
     def set_ibis_buffer(self, value):
         self._ibis_buffer = np.roll(self._ibis_buffer, -1)
         self._ibis_buffer[-1] = value
-        self._seconds = self._seconds - value / 1000
-        self._seconds = np.roll(self._seconds, -1)
-        self._seconds[-1] = -value / 1000
+        self._ibis_seconds = self._ibis_seconds - value / 1000
+        self._ibis_seconds = np.roll(self._ibis_seconds, -1)
+        self._ibis_seconds[-1] = -value / 1000
         self.ibis_buffer_update.emit(self.ibis_buffer)
         self.compute_local_hrv()
 
     def compute_local_hrv(self):
+        self._duration_current_phase += self._ibis_buffer[-1]
         current_ibi_phase = np.sign(self._ibis_buffer[-1] - self._ibis_buffer[-2])    # 1: IBI rises, -1: IBI falls, 0: IBI constant
         if current_ibi_phase == 0:
             return
@@ -68,6 +73,12 @@ class Model(QObject):
         self.hrv_buffer = local_hrv
         # potentially enforce constraints on local power here
         print(f"Local hrv: {local_hrv}!")
+
+        seconds_current_phase = np.floor(self._duration_current_phase / 1000)
+        self._mean_hrv_seconds = self._mean_hrv_seconds - seconds_current_phase
+        self._mean_hrv_seconds = np.roll(self._mean_hrv_seconds, -1)
+        self._mean_hrv_seconds[-1] = -seconds_current_phase
+        self._duration_current_phase = 0
 
         self._last_ibi_extreme = current_ibi_extreme
         self._last_ibi_phase = current_ibi_phase
@@ -81,7 +92,7 @@ class Model(QObject):
     def hrv_buffer(self, value):
         self._hrv_buffer = np.roll(self._hrv_buffer, -1)
         self._hrv_buffer[-1] = value
-        average_idcs = find_indices_to_average(self._seconds[-self._hrv_buffer.size:],
+        average_idcs = find_indices_to_average(self._ibis_seconds[-HRV_BUFFER_SIZE:],
                                                self._hrv_mean_window)
         self.mean_hrv_buffer = self._hrv_buffer[average_idcs].mean()
 
@@ -96,12 +107,20 @@ class Model(QObject):
         self.mean_hrv_update.emit(self._mean_hrv_buffer)
 
     @property
-    def seconds(self):
-        return self._seconds
+    def ibis_seconds(self):
+        return self._ibis_seconds
 
-    @seconds.setter
-    def seconds(self, value):
-        self._seconds = value
+    @ibis_seconds.setter
+    def ibis_seconds(self, value):
+        self._ibis_seconds = value
+
+    @property
+    def mean_hrv_seconds(self):
+        return self._mean_hrv_seconds
+
+    @mean_hrv_seconds.setter
+    def mean_hrv_seconds(self, value):
+        self._mean_hrv_seconds = value
 
     @Property(int)
     def breathing_rate(self):

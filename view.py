@@ -44,8 +44,24 @@ class View(QMainWindow):
         self.ibis_signal = pg.PlotCurveItem()
         pen = pg.mkPen(color=(0, 191, 255), width=7.5)
         self.ibis_signal.setPen(pen)
-        self.ibis_signal.setData(self.model.seconds, self.model.ibis_buffer)
+        self.ibis_signal.setData(self.model.ibis_seconds,
+                                 self.model.ibis_buffer)
         self.ibis_plot.addItem(self.ibis_signal)
+
+        self.mean_hrv_plot = pg.PlotWidget()#GradientWidget()
+        self.mean_hrv_plot.setBackground("w")
+        self.mean_hrv_plot.setLabel("left", "HRV (msec)",
+                                **{"font-size": "25px"})
+        self.mean_hrv_plot.setLabel("bottom", "Seconds", **{"font-size": "25px"})
+        self.mean_hrv_plot.showGrid(y=True)
+        self.mean_hrv_plot.setYRange(0, 600, padding=0)
+        self.mean_hrv_plot.setMouseEnabled(x=False, y=False)
+
+        self.mean_hrv_signal = pg.PlotCurveItem()
+        pen = pg.mkPen(color=(0, 191, 255), width=7.5)
+        self.mean_hrv_signal.setPen(pen)
+        self.mean_hrv_signal.setData(self.model.mean_hrv_seconds, self.model.mean_hrv_buffer)
+        self.mean_hrv_plot.addItem(self.mean_hrv_signal)
 
         self.pacer_plot = pg.PlotWidget()
         self.pacer_plot.setBackground("w")
@@ -79,12 +95,12 @@ class View(QMainWindow):
         self.connect_button = QPushButton("Connect")
         self.connect_button.clicked.connect(self.connect_sensor)
 
-        self.hrv_label = QLabel("Current HRV:")
-        self.hrv_label.setFont(QFont("Arial", 25))
+        # self.hrv_label = QLabel("Current HRV:")
+        # self.hrv_label.setFont(QFont("Arial", 25))
 
-        self.hrv_display = QLabel()
-        self.hrv_display.setText("0")
-        self.hrv_display.setFont(QFont("Arial", 50))
+        # self.hrv_display = QLabel()
+        # self.hrv_display.setText("0")
+        # self.hrv_display.setFont(QFont("Arial", 50))
 
         self.hrv_smoothwindow_label = QLabel("HRV smoothing window")
 
@@ -98,35 +114,27 @@ class View(QMainWindow):
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
-        self.hlayout0 = QHBoxLayout(self.central_widget)
+        self.vlayout0 = QVBoxLayout(self.central_widget)
+
+        self.hlayout0 = QHBoxLayout()
+        self.hlayout0.addWidget(self.ibis_plot, stretch=80)
+        self.hlayout0.addWidget(self.pacer_plot, stretch=20)
+        self.vlayout0.addLayout(self.hlayout0)
+
+        self.vlayout0.addWidget(self.mean_hrv_plot)
+
         self.hlayout1 = QHBoxLayout()
-        self.hlayout2 = QHBoxLayout()
-
-        self.vlayout0 = QVBoxLayout()
-        self.vlayout1 = QVBoxLayout()
-
-        self.hlayout0.addLayout(self.vlayout0, stretch=75)
-        self.hlayout0.addLayout(self.vlayout1, stretch=25)
-
-        self.vlayout0.addWidget(self.ibis_plot)
-        self.vlayout0.addLayout(self.hlayout1)
-        self.vlayout0.addLayout(self.hlayout2)
-
         self.hlayout1.addWidget(self.scan_button)
         self.hlayout1.addWidget(self.mac_menu)
-
-        self.hlayout2.addWidget(self.connect_button)
-        self.hlayout2.addWidget(self.hrv_label)
-        self.hlayout2.addWidget(self.hrv_display)
-        self.hlayout2.addWidget(self.hrv_smoothwindow_label)
-        self.hlayout2.addWidget(self.hrv_smoothwindow)
-
-        self.vlayout1.addWidget(self.pacer_plot, stretch=70)
-        self.vlayout1.addWidget(self.pacer_rate, stretch=15)
-        self.vlayout1.addWidget(self.pacer_label, stretch=15)
+        self.hlayout1.addWidget(self.connect_button)
+        self.hlayout1.addWidget(self.hrv_smoothwindow_label)
+        self.hlayout1.addWidget(self.hrv_smoothwindow)
+        self.hlayout1.addWidget(self.pacer_rate)
+        self.hlayout1.addWidget(self.pacer_label)
+        self.vlayout0.addLayout(self.hlayout1)
 
         self.model.ibis_buffer_update.connect(self.plot_ibis)
-        self.model.mean_hrv_update.connect(self.plot_local_hrv)
+        self.model.mean_hrv_update.connect(self.plot_hrv)
         self.model.mac_addresses_update.connect(self.list_macs)
         self.model.pacer_disk_update.connect(self.plot_pacer_disk)
         self.model.pacer_rate_update.connect(self.update_pacer_label)
@@ -144,10 +152,10 @@ class View(QMainWindow):
                                          self.sensor.loop)
 
     def plot_ibis(self, ibis):
-        self.ibis_signal.setData(self.model.seconds, ibis)
+        self.ibis_signal.setData(self.model.ibis_seconds, ibis)
 
-    def plot_local_hrv(self, hrv):
-        self.hrv_display.setText(str(hrv[-1]))
+    def plot_hrv(self, hrv):
+        self.mean_hrv_signal.setData(self.model.mean_hrv_seconds, hrv)
 
     def list_macs(self, macs):
         self.mac_menu.clear()
