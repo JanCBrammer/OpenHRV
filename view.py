@@ -3,7 +3,7 @@ import asyncio
 from utils import valid_mac
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
-                               QSlider, QSpinBox)
+                               QSlider, QSpinBox, QGroupBox, QFormLayout)
 from PySide2.QtCore import Qt, QThread
 from PySide2.QtGui import QFont, QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
@@ -91,21 +91,17 @@ class View(QMainWindow):
         self.pacer_rate.valueChanged.connect(self.model.set_breathing_rate)
         self.pacer_rate.setSliderPosition(self.model.breathing_rate)
 
-        self.pacer_label = QLabel(f"Breathing Rate: {self.model.breathing_rate}")
-        self.pacer_label.setFont(QFont("Arial", 25))
+        self.pacer_label = QLabel(f"Rate: {self.model.breathing_rate}")
+        # self.pacer_label.setFont(QFont("Arial", 25))
 
         self.hrv_target = QSlider(Qt.Horizontal)
         self.hrv_target.setRange(50, 600)
         self.hrv_target.setSingleStep(10)
         self.hrv_target.setSliderPosition(self.model.hrv_target)
         self.hrv_target.valueChanged.connect(self.model.set_hrv_target)
-        self.hrv_target.valueChanged.connect(lambda target:
-            self.mean_hrv_plot.setYRange(0, target, padding=0))
-        self.hrv_target.valueChanged.connect(lambda target:
-            self.update_hrv_target_label(target))
 
-        self.hrv_target_label = QLabel(f"HRV Target: {self.model.hrv_target}")
-        self.hrv_target_label.setFont(QFont("Arial", 25))
+        self.hrv_target_label = QLabel(f"Target: {self.model.hrv_target}")
+        # self.hrv_target_label.setFont(QFont("Arial", 25))
 
         self.scan_button = QPushButton("Scan")
         self.scan_button.clicked.connect(self.scanner.scan)
@@ -115,7 +111,7 @@ class View(QMainWindow):
         self.connect_button = QPushButton("Connect")
         self.connect_button.clicked.connect(self.connect_sensor)
 
-        self.hrv_smoothwindow_label = QLabel("HRV smoothing window")
+        self.hrv_smoothwindow_label = QLabel("Smoothing Window")
 
         self.hrv_smoothwindow = QSpinBox()
         self.hrv_smoothwindow.setRange(0, 15)
@@ -137,15 +133,27 @@ class View(QMainWindow):
         self.vlayout0.addWidget(self.mean_hrv_plot)
 
         self.hlayout1 = QHBoxLayout()
-        self.hlayout1.addWidget(self.scan_button)
-        self.hlayout1.addWidget(self.mac_menu)
-        self.hlayout1.addWidget(self.connect_button)
-        self.hlayout1.addWidget(self.hrv_smoothwindow_label)
-        self.hlayout1.addWidget(self.hrv_smoothwindow)
-        self.hlayout1.addWidget(self.pacer_rate)
-        self.hlayout1.addWidget(self.pacer_label)
-        self.hlayout1.addWidget(self.hrv_target)
-        self.hlayout1.addWidget(self.hrv_target_label)
+
+        self.device_config = QFormLayout()
+        self.device_config.addRow(self.scan_button, self.mac_menu)
+        self.device_config.addRow(self.connect_button)
+        self.device_panel = QGroupBox("ECG Devices")
+        self.device_panel.setLayout(self.device_config)
+        self.hlayout1.addWidget(self.device_panel, stretch=33)
+
+        self.hrv_config = QFormLayout()
+        self.hrv_config.addRow(self.hrv_smoothwindow_label, self.hrv_smoothwindow)
+        self.hrv_config.addRow(self.hrv_target_label, self.hrv_target)
+        self.hrv_panel = QGroupBox("HRV Settings")
+        self.hrv_panel.setLayout(self.hrv_config)
+        self.hlayout1.addWidget(self.hrv_panel, stretch=33)
+
+        self.pacer_config = QFormLayout()
+        self.pacer_config.addRow(self.pacer_label, self.pacer_rate)
+        self.pacer_panel = QGroupBox("Breathing Pacer")
+        self.pacer_panel.setLayout(self.pacer_config)
+        self.hlayout1.addWidget(self.pacer_panel, stretch=33)
+
         self.vlayout0.addLayout(self.hlayout1)
 
         self.model.ibis_buffer_update.connect(self.plot_ibis)
@@ -153,6 +161,7 @@ class View(QMainWindow):
         self.model.mac_addresses_update.connect(self.list_macs)
         self.model.pacer_disk_update.connect(self.plot_pacer_disk)
         self.model.pacer_rate_update.connect(self.update_pacer_label)
+        self.model.hrv_target_update.connect(self.update_hrv_target)
 
         self.pacer.start()
         self.scanner_thread.start()
@@ -180,7 +189,8 @@ class View(QMainWindow):
         self.pacer_disc.setData(*coordinates)
 
     def update_pacer_label(self, rate):
-        self.pacer_label.setText(f"Breathing Rate: {rate}")
+        self.pacer_label.setText(f"Rate: {rate}")
 
-    def update_hrv_target_label(self, target):
-        self.hrv_target_label.setText(f"HRV Target: {target}")
+    def update_hrv_target(self, target):
+        self.mean_hrv_plot.setYRange(0, target, padding=0)
+        self.hrv_target_label.setText(f"Target: {target}")

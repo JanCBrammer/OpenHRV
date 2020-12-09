@@ -1,4 +1,4 @@
-import redis
+# import redis
 from config import (REDIS_HOST, REDIS_PORT, MEANHRV_BUFFER_SIZE,
                     HRV_BUFFER_SIZE, IBI_BUFFER_SIZE)
 from PySide2.QtCore import QObject, Signal, Slot, Property
@@ -7,17 +7,17 @@ import numpy as np
 from utils import find_indices_to_average
 
 
-redis_host = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+# redis_host = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
 
 
-def publish_to_redis(func):
-    @wraps(func)
-    def publish_attribute(model, attribute):
-        func(model, attribute)
-        if isinstance(attribute, np.ndarray):
-            attribute = float(attribute[-1])
-        redis_host.set("custom_key", attribute)
-    return publish_attribute
+# def publish_to_redis(func):
+#     @wraps(func)
+#     def publish_attribute(model, attribute):
+#         func(model, attribute)
+#         if isinstance(attribute, np.ndarray):
+#             attribute = float(attribute[-1])
+#         redis_host.set("custom_key", attribute)
+#     return publish_attribute
 
 
 class Model(QObject):
@@ -27,7 +27,8 @@ class Model(QObject):
     mean_hrv_update = Signal(object)
     mac_addresses_update = Signal(object)
     pacer_disk_update = Signal(object)
-    pacer_rate_update = Signal(object)
+    pacer_rate_update = Signal(int)
+    hrv_target_update = Signal(int)
 
     def __init__(self):
         super().__init__()
@@ -150,6 +151,7 @@ class Model(QObject):
     # @publish_to_redis
     def set_hrv_target(self, value):
         self._hrv_target = value
+        self.hrv_target_update.emit(value)
 
     @property
     def pacer_coordinates(self):
