@@ -5,7 +5,7 @@ from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
                                QSlider, QSpinBox, QGroupBox, QFormLayout)
 from PySide2.QtCore import Qt, QThread
-from PySide2.QtGui import QFont, QIcon, QLinearGradient, QBrush, QGradient
+from PySide2.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
 
 
@@ -22,7 +22,7 @@ class View(QMainWindow):
         self.pacer = pacer
 
         self.scanner = SensorScanner()
-        self.scanner_thread = QThread()
+        self.scanner_thread = QThread(self)
         self.scanner.moveToThread(self.scanner_thread)
         self.scanner.mac_update.connect(self.model.set_mac_addresses)
 
@@ -92,7 +92,6 @@ class View(QMainWindow):
         self.pacer_rate.setSliderPosition(self.model.breathing_rate)
 
         self.pacer_label = QLabel(f"Rate: {self.model.breathing_rate}")
-        # self.pacer_label.setFont(QFont("Arial", 25))
 
         self.hrv_target = QSlider(Qt.Horizontal)
         self.hrv_target.setRange(50, 600)
@@ -101,7 +100,6 @@ class View(QMainWindow):
         self.hrv_target.valueChanged.connect(self.model.set_hrv_target)
 
         self.hrv_target_label = QLabel(f"Target: {self.model.hrv_target}")
-        # self.hrv_target_label.setFont(QFont("Arial", 25))
 
         self.scan_button = QPushButton("Scan")
         self.scan_button.clicked.connect(self.scanner.scan)
@@ -166,6 +164,16 @@ class View(QMainWindow):
         self.pacer.start()
         self.scanner_thread.start()
         self.sensor_thread.start()
+
+    def closeEvent(self, event):
+        """Properly shut down all threads."""
+        print("Closing threads...")
+        self.scanner_thread.quit()
+        self.scanner_thread.wait()
+
+        self.sensor_thread.quit()    # since quit() only works if the thread has a running event loop...
+        self.sensor.loop.call_soon_threadsafe(self.sensor.loop.stop)    # ...the event loop must only be stopped AFTER quit() has been called!
+        self.sensor_thread.wait()
 
     def connect_sensor(self):
         mac = self.mac_menu.currentText()
