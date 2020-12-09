@@ -5,7 +5,7 @@ from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
                                QSlider, QSpinBox)
 from PySide2.QtCore import Qt, QThread
-from PySide2.QtGui import QFont, QIcon
+from PySide2.QtGui import QFont, QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
 
 
@@ -48,7 +48,7 @@ class View(QMainWindow):
                                  self.model.ibis_buffer)
         self.ibis_plot.addItem(self.ibis_signal)
 
-        self.mean_hrv_plot = pg.PlotWidget()#GradientWidget()
+        self.mean_hrv_plot = pg.PlotWidget()
         self.mean_hrv_plot.setBackground("w")
         self.mean_hrv_plot.setLabel("left", "HRV (msec)",
                                 **{"font-size": "25px"})
@@ -56,9 +56,16 @@ class View(QMainWindow):
         self.mean_hrv_plot.showGrid(y=True)
         self.mean_hrv_plot.setYRange(0, 600, padding=0)
         self.mean_hrv_plot.setMouseEnabled(x=False, y=False)
+        colorgrad = QLinearGradient(0, 0, 0, 1)    # horizontal gradient
+        colorgrad.setCoordinateMode(QGradient.ObjectMode)
+        colorgrad.setColorAt(0, pg.mkColor("g"))
+        colorgrad.setColorAt(.5, pg.mkColor("y"))
+        colorgrad.setColorAt(1, pg.mkColor("r"))
+        brush = QBrush(colorgrad)
+        self.mean_hrv_plot.getViewBox().setBackgroundColor(brush)
 
         self.mean_hrv_signal = pg.PlotCurveItem()
-        pen = pg.mkPen(color=(0, 191, 255), width=7.5)
+        pen = pg.mkPen(color="w", width=7.5)
         self.mean_hrv_signal.setPen(pen)
         self.mean_hrv_signal.setData(self.model.mean_hrv_seconds, self.model.mean_hrv_buffer)
         self.mean_hrv_plot.addItem(self.mean_hrv_signal)
@@ -87,6 +94,19 @@ class View(QMainWindow):
         self.pacer_label = QLabel(f"Breathing Rate: {self.model.breathing_rate}")
         self.pacer_label.setFont(QFont("Arial", 25))
 
+        self.hrv_target = QSlider(Qt.Horizontal)
+        self.hrv_target.setRange(50, 600)
+        self.hrv_target.setSingleStep(10)
+        self.hrv_target.setSliderPosition(self.model.hrv_target)
+        self.hrv_target.valueChanged.connect(self.model.set_hrv_target)
+        self.hrv_target.valueChanged.connect(lambda target:
+            self.mean_hrv_plot.setYRange(0, target, padding=0))
+        self.hrv_target.valueChanged.connect(lambda target:
+            self.update_hrv_target_label(target))
+
+        self.hrv_target_label = QLabel(f"HRV Target: {self.model.hrv_target}")
+        self.hrv_target_label.setFont(QFont("Arial", 25))
+
         self.scan_button = QPushButton("Scan")
         self.scan_button.clicked.connect(self.scanner.scan)
 
@@ -94,13 +114,6 @@ class View(QMainWindow):
 
         self.connect_button = QPushButton("Connect")
         self.connect_button.clicked.connect(self.connect_sensor)
-
-        # self.hrv_label = QLabel("Current HRV:")
-        # self.hrv_label.setFont(QFont("Arial", 25))
-
-        # self.hrv_display = QLabel()
-        # self.hrv_display.setText("0")
-        # self.hrv_display.setFont(QFont("Arial", 50))
 
         self.hrv_smoothwindow_label = QLabel("HRV smoothing window")
 
@@ -131,6 +144,8 @@ class View(QMainWindow):
         self.hlayout1.addWidget(self.hrv_smoothwindow)
         self.hlayout1.addWidget(self.pacer_rate)
         self.hlayout1.addWidget(self.pacer_label)
+        self.hlayout1.addWidget(self.hrv_target)
+        self.hlayout1.addWidget(self.hrv_target_label)
         self.vlayout0.addLayout(self.hlayout1)
 
         self.model.ibis_buffer_update.connect(self.plot_ibis)
@@ -166,3 +181,6 @@ class View(QMainWindow):
 
     def update_pacer_label(self, rate):
         self.pacer_label.setText(f"Breathing Rate: {rate}")
+
+    def update_hrv_target_label(self, target):
+        self.hrv_target_label.setText(f"HRV Target: {target}")

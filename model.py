@@ -44,6 +44,7 @@ class Model(QObject):
         self._mac_addresses = []
         self._breathing_rate = 6
         self._hrv_mean_window = 10
+        self._hrv_target = 200
         self._duration_current_phase = 0
 
     @Property(object)
@@ -140,6 +141,15 @@ class Model(QObject):
     # @publish_to_redis
     def set_hrv_mean_window(self, value):
         self._hrv_mean_window = value
+
+    @Property(int)
+    def hrv_target(self):
+        return self._hrv_target
+
+    @Slot(int)
+    # @publish_to_redis
+    def set_hrv_target(self, value):
+        self._hrv_target = value
 
     @property
     def pacer_coordinates(self):
