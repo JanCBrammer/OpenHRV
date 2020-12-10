@@ -59,6 +59,18 @@ class SensorClient(QObject):
         """Start the (empty) asyncio event loop."""
         self.loop.run_forever()
 
+    async def stop(self):
+        """Shut down client before app is closed."""
+        try:
+            await self._ble_client.stop_notify(HR_UUID)
+            print("Shut down notification.")
+            self._ble_client.set_disconnected_callback(None)    # deregister disconnection callback to prevent reconnection attempt
+            await self._ble_client.disconnect()
+            print("Disconnected client.")
+        except (Exception, BleakError) as error:
+            print(f"Reconnection exception: {error}.")
+        self.loop.stop()
+
     async def reconnect_internal(self, mac):
         """Handle internal disconnection."""
         print("Internal reconnection request.")

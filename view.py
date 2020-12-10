@@ -172,7 +172,7 @@ class View(QMainWindow):
         self.scanner_thread.wait()
 
         self.sensor_thread.quit()    # since quit() only works if the thread has a running event loop...
-        self.sensor.loop.call_soon_threadsafe(self.sensor.loop.stop)    # ...the event loop must only be stopped AFTER quit() has been called!
+        asyncio.run_coroutine_threadsafe(self.sensor.stop(), self.sensor.loop)    # ...the event loop must only be stopped AFTER quit() has been called!
         self.sensor_thread.wait()
 
     def connect_sensor(self):
