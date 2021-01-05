@@ -16,7 +16,7 @@ class View(QMainWindow):
 
         self.setWindowTitle("OpenHRV")
         self.setWindowIcon(QIcon("./logo.png"))
-        self.setGeometry(50, 50, 1750, 750)
+        self.setGeometry(50, 50, 1750, 850)
 
         self.model = model
         self.pacer = pacer
