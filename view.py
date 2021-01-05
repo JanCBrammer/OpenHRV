@@ -93,13 +93,16 @@ class View(QMainWindow):
 
         self.pacer_label = QLabel(f"Rate: {self.model.breathing_rate}")
 
+
+        self.hrv_target_label = QLabel(f"Target: {self.model.hrv_target}")
+
         self.hrv_target = QSlider(Qt.Horizontal)
         self.hrv_target.setRange(50, 600)
         self.hrv_target.setSingleStep(10)
-        self.hrv_target.setSliderPosition(self.model.hrv_target)
         self.hrv_target.valueChanged.connect(self.model.set_hrv_target)
+        self.hrv_target.setSliderPosition(self.model.hrv_target)
+        self.update_hrv_target(self.model.hrv_target)
 
-        self.hrv_target_label = QLabel(f"Target: {self.model.hrv_target}")
 
         self.scan_button = QPushButton("Scan")
         self.scan_button.clicked.connect(self.scanner.scan)
