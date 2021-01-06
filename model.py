@@ -2,7 +2,7 @@
 from config import (REDIS_HOST, REDIS_PORT, MEANHRV_BUFFER_SIZE,
                     HRV_BUFFER_SIZE, IBI_BUFFER_SIZE)
 from PySide2.QtCore import QObject, Signal, Slot, Property
-from functools import wraps
+# from functools import wraps
 import numpy as np
 from utils import find_indices_to_average
 

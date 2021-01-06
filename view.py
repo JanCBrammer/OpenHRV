@@ -8,6 +8,8 @@ from PySide2.QtCore import Qt, QThread
 from PySide2.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
 
+import resources    # noqa
+
 
 class View(QMainWindow):
 
@@ -15,7 +17,7 @@ class View(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("OpenHRV")
-        self.setWindowIcon(QIcon("./logo.png"))
+        self.setWindowIcon(QIcon(":/logo.png"))
         self.setGeometry(50, 50, 1750, 850)
 
         self.model = model
