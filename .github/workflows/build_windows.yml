@@ -27,7 +27,7 @@ jobs:
     - name: build with pyinstaller
       shell: bash -l {0}
       run: |
-        pyinstaller --onefile --windowed --icon=logo.ico OpenHRV.py
+        pyinstaller --onefile --icon=logo.ico OpenHRV.py
 
     - name: upload exe
       uses: actions/upload-artifact@v2
