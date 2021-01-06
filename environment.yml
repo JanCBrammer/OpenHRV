@@ -1,9 +1,9 @@
 name: OpenHRV
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - python=3.8
+  - nomkl    # necessary to install numpy (pyqtgraph dependency) without MKL, since MKL currently breaks pyinstaller
   - pyqtgraph
   - pyside2
   - pyinstaller
