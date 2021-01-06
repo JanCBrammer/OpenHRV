@@ -3,9 +3,10 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - pyqtgraph
   - python=3.8
+  - pyqtgraph
   - pyside2
+  - pyinstaller
   - pip
   - pip:
     - bleak

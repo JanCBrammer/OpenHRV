@@ -13,22 +13,24 @@ jobs:
 
     - uses: actions/checkout@v2
 
-    - name: set up Python
-      uses: actions/setup-python@v2
+    - name: Set up miniconda
+      uses: conda-incubator/setup-miniconda@v2
       with:
+        auto-update-conda: true
+        channels: conda-forge
+        channel-priority: strict
+        activate-environment: OpenHRV
+        environment-file: environment.yml
         python-version: 3.8
-
-    - name: install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pyinstaller
+        auto-activate-base: false
 
     - name: build with pyinstaller
+      shell: bash -l {0}
       run: |
         pyinstaller --onefile --windowed --icon=logo.ico OpenHRV.py
 
     - name: upload exe
       uses: actions/upload-artifact@v2
       with:
-        name: windows_exe
+        name: OpenHRV_windows
         path: dist/OpenHRV.exe
