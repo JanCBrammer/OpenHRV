@@ -1,0 +1,37 @@
+name: release build
+
+on:
+  release:
+    types:
+      - published
+
+jobs:
+
+  build_windows:
+
+    runs-on: windows-latest
+
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: Set up miniconda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-update-conda: true
+        activate-environment: OpenHRV
+        environment-file: environment.yml
+        python-version: 3.8
+        auto-activate-base: false
+
+    - name: build with pyinstaller
+      shell: powershell
+      run: |
+        pyinstaller --onefile --windowed --icon=logo.ico OpenHRV.py
+
+    - name: upload exe to release
+      uses: JasonEtco/upload-to-release@master
+      with:
+        args: dist/OpenHRV.exe
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    # token generated implicitly

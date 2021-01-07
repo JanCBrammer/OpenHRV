@@ -1,11 +1,11 @@
-name: publish release build
+name: manual build
 
 on:
   workflow_dispatch    # manually triggered workflow
 
-
 jobs:
-  build:
+
+  build_windows:
 
     runs-on: windows-latest
 
@@ -27,7 +27,7 @@ jobs:
       run: |
         pyinstaller --onefile --icon=logo.ico OpenHRV.py
 
-    - name: upload exe
+    - name: upload exe artifact
       uses: actions/upload-artifact@v2
       with:
         name: OpenHRV_windows
