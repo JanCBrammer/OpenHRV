@@ -29,9 +29,28 @@ jobs:
       run: |
         pyinstaller --onefile --windowed --icon=logo.ico OpenHRV.py
 
+    - name: upload exe artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: OpenHRV_windows
+        path: dist/OpenHRV.exe
+
+  upload_windows:    # separate job on Ubuntu since JasonEtco/upload-to-release@master only runs on Linux
+
+    needs: build_windows
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: download exe
+      uses: actions/download-artifact@v2
+      with:
+        name: OpenHRV_windows
+
     - name: upload exe to release
       uses: JasonEtco/upload-to-release@master
       with:
-        args: dist/OpenHRV.exe
+        args: OpenHRV.exe
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    # token generated implicitly
