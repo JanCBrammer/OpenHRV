@@ -8,7 +8,8 @@ Polar chest straps (H7, H9, H10).
 ## Installation
 
 ### Windows
-Download the [executable]() and run it, no installation required.
+Download [OpenHRV.exe](https://github.com/JanCBrammer/OpenHRV/releases/latest)
+and run it, no installation required.
 
 ### Linux, MacOS, Windows
 
