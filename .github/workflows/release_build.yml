@@ -51,6 +51,6 @@ jobs:
     - name: upload exe to release
       uses: JasonEtco/upload-to-release@master
       with:
-        args: OpenHRV.exe
+        args: OpenHRV.exe application/octet-stream
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    # token generated implicitly
