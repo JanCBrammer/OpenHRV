@@ -27,7 +27,7 @@ class Model(QObject):
     mean_hrv_update = Signal(object)
     mac_addresses_update = Signal(object)
     pacer_disk_update = Signal(object)
-    pacer_rate_update = Signal(int)
+    pacer_rate_update = Signal(float)
     hrv_target_update = Signal(int)
 
     def __init__(self):
@@ -43,7 +43,7 @@ class Model(QObject):
         self._last_ibi_phase = -1
         self._last_ibi_extreme = 0
         self._mac_addresses = []
-        self._breathing_rate = 6
+        self._breathing_rate = 6.
         self._hrv_mean_window = 10
         self._hrv_target = 200
         self._duration_current_phase = 0
@@ -124,15 +124,15 @@ class Model(QObject):
     def mean_hrv_seconds(self, value):
         self._mean_hrv_seconds = value
 
-    @Property(int)
+    @Property(float)
     def breathing_rate(self):
         return self._breathing_rate
 
-    @Slot(int)
+    @Slot(float)
     # @publish_to_redis
     def set_breathing_rate(self, value):
-        self._breathing_rate = value
-        self.pacer_rate_update.emit(value)
+        self._breathing_rate = (value + 8) / 2    # force values into [4, 7], step .5
+        self.pacer_rate_update.emit(self._breathing_rate)
 
     @Property(int)
     def hrv_mean_window(self):
