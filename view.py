@@ -3,7 +3,8 @@ import asyncio
 from utils import valid_mac
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
-                               QSlider, QSpinBox, QGroupBox, QFormLayout)
+                               QSlider, QSpinBox, QGroupBox, QFormLayout,
+                               QCheckBox)
 from PySide2.QtCore import Qt, QThread
 from PySide2.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
@@ -93,8 +94,11 @@ class View(QMainWindow):
         self.pacer_rate.valueChanged.connect(self.model.set_breathing_rate)
         self.pacer_rate.setSliderPosition(self.model.breathing_rate)
 
-        self.pacer_label = QLabel(f"Rate: {self.model.breathing_rate}")
+        self.pacer_toggle = QCheckBox("Show pacer", self)
+        self.pacer_toggle.setChecked(True)
+        self.pacer_toggle.stateChanged.connect(self.toggle_pacer)
 
+        self.pacer_label = QLabel(f"Rate: {self.model.breathing_rate}")
 
         self.hrv_target_label = QLabel(f"Target: {self.model.hrv_target}")
 
@@ -104,7 +108,6 @@ class View(QMainWindow):
         self.hrv_target.valueChanged.connect(self.model.set_hrv_target)
         self.hrv_target.setSliderPosition(self.model.hrv_target)
         self.update_hrv_target(self.model.hrv_target)
-
 
         self.scan_button = QPushButton("Scan")
         self.scan_button.clicked.connect(self.scanner.scan)
@@ -153,6 +156,7 @@ class View(QMainWindow):
 
         self.pacer_config = QFormLayout()
         self.pacer_config.addRow(self.pacer_label, self.pacer_rate)
+        self.pacer_config.addRow(self.pacer_toggle)
         self.pacer_panel = QGroupBox("Breathing Pacer")
         self.pacer_panel.setLayout(self.pacer_config)
         self.hlayout1.addWidget(self.pacer_panel, stretch=33)
@@ -207,3 +211,7 @@ class View(QMainWindow):
     def update_hrv_target(self, target):
         self.mean_hrv_plot.setYRange(0, target, padding=0)
         self.hrv_target_label.setText(f"Target: {target}")
+
+    def toggle_pacer(self):
+        visible = self.pacer_plot.isVisible()
+        self.pacer_plot.setVisible(not visible)
