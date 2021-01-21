@@ -14,7 +14,7 @@ import resources    # noqa
 
 class View(QMainWindow):
 
-    def __init__(self, model, pacer):
+    def __init__(self, model):
         super().__init__()
 
         self.setWindowTitle("OpenHRV")
@@ -22,7 +22,6 @@ class View(QMainWindow):
         self.setGeometry(50, 50, 1750, 850)
 
         self.model = model
-        self.pacer = pacer
 
         self.scanner = SensorScanner()
         self.scanner_thread = QThread(self)
@@ -169,7 +168,6 @@ class View(QMainWindow):
         self.model.pacer_rate_update.connect(self.update_pacer_label)
         self.model.hrv_target_update.connect(self.update_hrv_target)
 
-        self.pacer.start()
         self.scanner_thread.start()
         self.sensor_thread.start()
 

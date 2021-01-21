@@ -10,11 +10,11 @@ class Application(QApplication):
         super(Application, self).__init__(sys_argv)
         self._model = Model()
         self._pacer = Pacer(self._model)
-        self._view = View(self._model, self._pacer)
-
+        self._view = View(self._model)
 
 def main():
     app = Application(sys.argv)
+    app._pacer.start()
     app._view.show()
     sys.exit(app.exec_())
 
