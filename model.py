@@ -1,23 +1,7 @@
-# import redis
-from config import (REDIS_HOST, REDIS_PORT, MEANHRV_BUFFER_SIZE,
-                    HRV_BUFFER_SIZE, IBI_BUFFER_SIZE)
+from config import MEANHRV_BUFFER_SIZE, HRV_BUFFER_SIZE, IBI_BUFFER_SIZE
 from PySide2.QtCore import QObject, Signal, Slot, Property
-# from functools import wraps
 import numpy as np
 from utils import find_indices_to_average
-
-
-# redis_host = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
-
-
-# def publish_to_redis(func):
-#     @wraps(func)
-#     def publish_attribute(model, attribute):
-#         func(model, attribute)
-#         if isinstance(attribute, np.ndarray):
-#             attribute = float(attribute[-1])
-#         redis_host.set("custom_key", attribute)
-#     return publish_attribute
 
 
 class Model(QObject):
@@ -29,6 +13,7 @@ class Model(QObject):
     pacer_disk_update = Signal(object)
     pacer_rate_update = Signal(float)
     hrv_target_update = Signal(int)
+    biofeedback_update = Signal(int)
 
     def __init__(self):
         super().__init__()
@@ -74,7 +59,7 @@ class Model(QObject):
         local_hrv = abs(self._last_ibi_extreme - current_ibi_extreme)
         self.hrv_buffer = local_hrv
         # potentially enforce constraints on local power here
-        print(f"Local hrv: {local_hrv}!")
+        print(f"Local HRV: {local_hrv}")
 
         seconds_current_phase = np.floor(self._duration_current_phase / 1000)
         self._mean_hrv_seconds = self._mean_hrv_seconds - seconds_current_phase
@@ -85,12 +70,40 @@ class Model(QObject):
         self._last_ibi_extreme = current_ibi_extreme
         self._last_ibi_phase = current_ibi_phase
 
+    def compute_biofeedback(self, x):
+        """Hill equation.
+
+        Biofeedback target (value of x at which half of the maximum reward is
+        obtained) is equivalent to K parameter.
+
+        Parameters
+        ----------
+        x : float
+            Input value.
+
+        Returns
+        -------
+        y : float
+            Biofeedback value in the range [0, 1].
+
+        References
+        ----------
+        [1] https://www.physiologyweb.com/calculators/hill_equation_interactive_graph.html
+        [2] https://en.wikipedia.org/wiki/Hill_equation_(biochemistry)
+        """
+        K = self.hrv_target * .5    # divide by half to make K the value at which maximum reward is obtained
+        Vmax = 1    # Upper limit of y values
+        n = 3    # Hill coefficient, determines steepness of curve
+        y = Vmax * x**n / (K**n + x**n)
+
+        print(f"Biofeedback score: {y}")
+        self.biofeedback_update.emit(y)
+
     @property
     def hrv_buffer(self):
         return self._hrv_buffer
 
     @hrv_buffer.setter
-    # @publish_to_redis
     def hrv_buffer(self, value):
         self._hrv_buffer = np.roll(self._hrv_buffer, -1)
         self._hrv_buffer[-1] = value
@@ -104,9 +117,12 @@ class Model(QObject):
 
     @mean_hrv_buffer.setter
     def mean_hrv_buffer(self, value):
+        self.compute_biofeedback(value)
         self._mean_hrv_buffer = np.roll(self._mean_hrv_buffer, -1)
         self._mean_hrv_buffer[-1] = value
         self.mean_hrv_update.emit(self._mean_hrv_buffer)
+        print(f"Mean HRV: {value}")
+
 
     @property
     def ibis_seconds(self):
@@ -129,7 +145,6 @@ class Model(QObject):
         return self._breathing_rate
 
     @Slot(float)
-    # @publish_to_redis
     def set_breathing_rate(self, value):
         self._breathing_rate = (value + 8) / 2    # force values into [4, 7], step .5
         self.pacer_rate_update.emit(self._breathing_rate)
@@ -139,7 +154,6 @@ class Model(QObject):
         return self._hrv_mean_window
 
     @Slot(int)
-    # @publish_to_redis
     def set_hrv_mean_window(self, value):
         self._hrv_mean_window = value
 
@@ -148,7 +162,6 @@ class Model(QObject):
         return self._hrv_target
 
     @Slot(int)
-    # @publish_to_redis
     def set_hrv_target(self, value):
         self._hrv_target = value
         self.hrv_target_update.emit(value)
