@@ -3,6 +3,7 @@ from PySide2.QtWidgets import QApplication
 from view import View
 from model import Model
 from pacer import Pacer
+from logger import RedisLogger
 
 
 class Application(QApplication):
@@ -11,6 +12,7 @@ class Application(QApplication):
         self._model = Model()
         self._pacer = Pacer(self._model)
         self._view = View(self._model)
+        self._logger = RedisLogger(self._model)
 
 def main():
     app = Application(sys.argv)

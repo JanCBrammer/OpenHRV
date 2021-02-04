@@ -105,7 +105,7 @@ class View(QMainWindow):
         self.hrv_target.setSingleStep(10)
         self.hrv_target.valueChanged.connect(self.model.set_hrv_target)
         self.hrv_target.setSliderPosition(self.model.hrv_target)
-        self.update_hrv_target(self.model.hrv_target)
+        self.mean_hrv_plot.setYRange(0, self.model.hrv_target, padding=0)
 
         self.scan_button = QPushButton("Scan")
         self.scan_button.clicked.connect(self.scanner.scan)
@@ -190,24 +190,24 @@ class View(QMainWindow):
                                          self.sensor.loop)
 
     def plot_ibis(self, ibis):
-        self.ibis_signal.setData(self.model.ibis_seconds, ibis)
+        self.ibis_signal.setData(self.model.ibis_seconds, ibis[1])
 
     def plot_hrv(self, hrv):
-        self.mean_hrv_signal.setData(self.model.mean_hrv_seconds, hrv)
+        self.mean_hrv_signal.setData(self.model.mean_hrv_seconds, hrv[1])
 
     def list_macs(self, macs):
         self.mac_menu.clear()
-        self.mac_menu.addItems(macs)
+        self.mac_menu.addItems(macs[1])
 
     def plot_pacer_disk(self, coordinates):
-        self.pacer_disc.setData(*coordinates)
+        self.pacer_disc.setData(*coordinates[1])
 
     def update_pacer_label(self, rate):
-        self.pacer_label.setText(f"Rate: {rate}")
+        self.pacer_label.setText(f"Rate: {rate[1]}")
 
     def update_hrv_target(self, target):
-        self.mean_hrv_plot.setYRange(0, target, padding=0)
-        self.hrv_target_label.setText(f"Target: {target}")
+        self.mean_hrv_plot.setYRange(0, target[1], padding=0)
+        self.hrv_target_label.setText(f"Target: {target[1]}")
 
     def toggle_pacer(self):
         visible = self.pacer_plot.isVisible()
