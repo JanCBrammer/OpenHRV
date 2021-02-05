@@ -187,6 +187,9 @@ class View(QMainWindow):
         asyncio.run_coroutine_threadsafe(self.sensor.stop(), self.sensor.loop)    # ...the event loop must only be stopped AFTER quit() has been called!
         self.sensor_thread.wait()
 
+        self.logger_thread.quit()
+        self.logger_thread.wait()
+
     def connect_sensor(self):
         mac = self.mac_menu.currentText()
         if not valid_mac(mac):
