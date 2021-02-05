@@ -8,6 +8,7 @@ from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
 from PySide2.QtCore import Qt, QThread
 from PySide2.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
+from logger import RedisLogger
 
 import resources    # noqa
 
@@ -33,6 +34,10 @@ class View(QMainWindow):
         self.sensor.moveToThread(self.sensor_thread)
         self.sensor.ibi_update.connect(self.model.set_ibis_buffer)
         self.sensor_thread.started.connect(self.sensor.run)
+
+        self.logger = RedisLogger(self.model)
+        self.logger_thread = QThread(self)
+        self.logger.moveToThread(self.logger_thread)
 
         self.ibis_plot = pg.PlotWidget()
         self.ibis_plot.setBackground("w")
@@ -170,6 +175,7 @@ class View(QMainWindow):
 
         self.scanner_thread.start()
         self.sensor_thread.start()
+        self.logger_thread.start()
 
     def closeEvent(self, event):
         """Properly shut down all threads."""
