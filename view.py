@@ -8,7 +8,7 @@ from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
 from PySide2.QtCore import Qt, QThread
 from PySide2.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
-from logger import RedisLogger
+from logger import RedisPublisher, RedisLogger
 
 import resources    # noqa
 
@@ -35,9 +35,13 @@ class View(QMainWindow):
         self.sensor.ibi_update.connect(self.model.set_ibis_buffer)
         self.sensor_thread.started.connect(self.sensor.run)
 
-        self.logger = RedisLogger(self.model)
-        self.logger_thread = QThread(self)
-        self.logger.moveToThread(self.logger_thread)
+        self.redis_publisher = RedisPublisher(self.model)
+        self.redis_publisher_thread = QThread(self)
+        self.redis_publisher.moveToThread(self.redis_publisher_thread)
+
+        self.redis_logger = RedisLogger()
+        self.redis_logger_thread = QThread(self)
+        self.redis_logger.moveToThread(self.redis_logger_thread)
 
         self.ibis_plot = pg.PlotWidget()
         self.ibis_plot.setBackground("w")
@@ -175,7 +179,8 @@ class View(QMainWindow):
 
         self.scanner_thread.start()
         self.sensor_thread.start()
-        self.logger_thread.start()
+        self.redis_publisher_thread.start()
+        self.redis_logger_thread.start()
 
     def closeEvent(self, event):
         """Properly shut down all threads."""
@@ -187,8 +192,11 @@ class View(QMainWindow):
         asyncio.run_coroutine_threadsafe(self.sensor.stop(), self.sensor.loop)    # ...the event loop must only be stopped AFTER quit() has been called!
         self.sensor_thread.wait()
 
-        self.logger_thread.quit()
-        self.logger_thread.wait()
+        self.redis_publisher_thread.quit()
+        self.redis_publisher_thread.wait()
+
+        self.redis_logger_thread.quit()
+        self.redis_logger_thread.wait()
 
     def connect_sensor(self):
         mac = self.mac_menu.currentText()

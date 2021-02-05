@@ -1,10 +1,11 @@
 import redis
+import time
 import numpy as np
 from config import REDIS_HOST, REDIS_PORT
 from PySide2.QtCore import QObject
 
 
-class RedisLogger(QObject):
+class RedisPublisher(QObject):
 
     def __init__(self, model):
         super().__init__()
@@ -27,12 +28,26 @@ class RedisLogger(QObject):
             val = int(val)
         try:
             self.redis.publish(key, val)
+            print(f"publishing {key}, {val}")
         except redis.exceptions.ConnectionError as e:
             print(e)    # client (re)-connects automatically; as soon as server is back up (in case of previous outage) client-server communication resumes
 
-    def record():
+    def set_marker(self):
         pass
 
 
-    def set_marker():
-        pass
+class RedisLogger(QObject):
+
+    def __init__(self):
+        super().__init__()
+
+        self.redis = redis.Redis(REDIS_HOST, REDIS_PORT)
+        self.subscription = self.redis.pubsub()
+        self.subscription.psubscribe("*")    # subscribe to all channels by matching everything
+
+    def record(self):
+        while True:
+            message = self.subscription.get_message()
+            if message:
+                print(f"recording: {message}")
+            time.sleep(0.01)
