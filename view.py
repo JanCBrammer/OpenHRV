@@ -4,7 +4,7 @@ from utils import valid_mac
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
                                QSlider, QSpinBox, QGroupBox, QFormLayout,
-                               QCheckBox)
+                               QCheckBox, QLineEdit)
 from PySide2.QtCore import Qt, QThread
 from PySide2.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
@@ -133,6 +133,11 @@ class View(QMainWindow):
         self.hrv_smoothwindow.valueChanged.connect(self.model.set_hrv_mean_window)
         self.hrv_smoothwindow.setValue(self.model.hrv_mean_window)
 
+
+        self.annotation = QLineEdit()
+        self.annotation_button = QPushButton("Annotate")
+        self.annotation_button.clicked.connect(lambda x:
+            self.redis_publisher.set_marker(self.annotation.text()))
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
@@ -152,21 +157,27 @@ class View(QMainWindow):
         self.device_config.addRow(self.connect_button)
         self.device_panel = QGroupBox("ECG Devices")
         self.device_panel.setLayout(self.device_config)
-        self.hlayout1.addWidget(self.device_panel, stretch=33)
+        self.hlayout1.addWidget(self.device_panel, stretch=25)
 
         self.hrv_config = QFormLayout()
         self.hrv_config.addRow(self.hrv_smoothwindow_label, self.hrv_smoothwindow)
         self.hrv_config.addRow(self.hrv_target_label, self.hrv_target)
         self.hrv_panel = QGroupBox("HRV Settings")
         self.hrv_panel.setLayout(self.hrv_config)
-        self.hlayout1.addWidget(self.hrv_panel, stretch=33)
+        self.hlayout1.addWidget(self.hrv_panel, stretch=25)
 
         self.pacer_config = QFormLayout()
         self.pacer_config.addRow(self.pacer_label, self.pacer_rate)
         self.pacer_config.addRow(self.pacer_toggle)
         self.pacer_panel = QGroupBox("Breathing Pacer")
         self.pacer_panel.setLayout(self.pacer_config)
-        self.hlayout1.addWidget(self.pacer_panel, stretch=33)
+        self.hlayout1.addWidget(self.pacer_panel, stretch=25)
+
+        self.recording_config = QFormLayout()
+        self.recording_config.addRow(self.annotation, self.annotation_button)
+        self.recording_panel = QGroupBox("Recording")
+        self.recording_panel.setLayout(self.recording_config)
+        self.hlayout1.addWidget(self.recording_panel, stretch=25)
 
         self.vlayout0.addLayout(self.hlayout1)
 

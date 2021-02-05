@@ -32,8 +32,8 @@ class RedisPublisher(QObject):
         except redis.exceptions.ConnectionError as e:
             print(e)    # client (re)-connects automatically; as soon as server is back up (in case of previous outage) client-server communication resumes
 
-    def set_marker(self):
-        pass
+    def set_marker(self, annotation):
+        self.redis.publish("eventmarker", annotation)
 
 
 class RedisLogger(QObject):
