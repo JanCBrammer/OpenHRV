@@ -5,12 +5,18 @@ from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
                                QSlider, QSpinBox, QGroupBox, QFormLayout,
                                QCheckBox, QLineEdit)
-from PySide2.QtCore import Qt, QThread
+from PySide2.QtCore import Qt, QThread, Signal, QObject
 from PySide2.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
 from logger import RedisPublisher, RedisLogger
 
 import resources    # noqa
+
+
+class ViewSignals(QObject):
+    """Cannot be defined on View directly since Signal needs to be defined on
+    object that inherits from QObject"""
+    annotation = Signal(tuple)
 
 
 class View(QMainWindow):
@@ -23,6 +29,7 @@ class View(QMainWindow):
         self.setGeometry(50, 50, 1750, 850)
 
         self.model = model
+        self.signals = ViewSignals()
 
         self.scanner = SensorScanner()
         self.scanner_thread = QThread(self)
@@ -38,6 +45,7 @@ class View(QMainWindow):
         self.redis_publisher = RedisPublisher(self.model)
         self.redis_publisher_thread = QThread(self)
         self.redis_publisher.moveToThread(self.redis_publisher_thread)
+        self.signals.annotation.connect(self.redis_publisher.publish)
 
         self.redis_logger = RedisLogger()
         self.redis_logger_thread = QThread(self)
@@ -140,10 +148,9 @@ class View(QMainWindow):
         self.save_recording_button = QPushButton("Save")
         self.save_recording_button.clicked.connect(self.redis_logger.save_recording)
 
-        self.annotation = QLineEdit(self)
+        self.annotation = QLineEdit()
         self.annotation_button = QPushButton("Annotate")
-        self.annotation_button.clicked.connect(lambda x:
-            self.redis_publisher.publish(("eventmarker", self.annotation.text())))
+        self.annotation_button.clicked.connect(self.emit_annotation)
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
@@ -248,3 +255,6 @@ class View(QMainWindow):
     def toggle_pacer(self):
         visible = self.pacer_plot.isVisible()
         self.pacer_plot.setVisible(not visible)
+
+    def emit_annotation(self):
+        self.signals.annotation.emit(("eventmarker", self.annotation.text()))
