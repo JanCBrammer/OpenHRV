@@ -42,6 +42,7 @@ class View(QMainWindow):
         self.redis_logger = RedisLogger()
         self.redis_logger_thread = QThread(self)
         self.redis_logger.moveToThread(self.redis_logger_thread)
+        self.redis_logger_thread.finished.connect(self.redis_logger.shutdown)
 
         self.ibis_plot = pg.PlotWidget()
         self.ibis_plot.setBackground("w")
@@ -133,8 +134,13 @@ class View(QMainWindow):
         self.hrv_smoothwindow.valueChanged.connect(self.model.set_hrv_mean_window)
         self.hrv_smoothwindow.setValue(self.model.hrv_mean_window)
 
+        self.start_recording_button = QPushButton("Start")
+        self.start_recording_button.clicked.connect(self.redis_logger.start_recording)
 
-        self.annotation = QLineEdit()
+        self.save_recording_button = QPushButton("Save")
+        self.save_recording_button.clicked.connect(self.redis_logger.save_recording)
+
+        self.annotation = QLineEdit(self)
         self.annotation_button = QPushButton("Annotate")
         self.annotation_button.clicked.connect(lambda x:
             self.redis_publisher.set_marker(self.annotation.text()))
@@ -174,6 +180,8 @@ class View(QMainWindow):
         self.hlayout1.addWidget(self.pacer_panel, stretch=25)
 
         self.recording_config = QFormLayout()
+        self.recording_config.addRow(self.start_recording_button,
+                                     self.save_recording_button)
         self.recording_config.addRow(self.annotation, self.annotation_button)
         self.recording_panel = QGroupBox("Recording")
         self.recording_panel.setLayout(self.recording_config)
