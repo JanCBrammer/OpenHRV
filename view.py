@@ -143,7 +143,7 @@ class View(QMainWindow):
         self.annotation = QLineEdit(self)
         self.annotation_button = QPushButton("Annotate")
         self.annotation_button.clicked.connect(lambda x:
-            self.redis_publisher.set_marker(self.annotation.text()))
+            self.redis_publisher.publish(("eventmarker", self.annotation.text())))
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
