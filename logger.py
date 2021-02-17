@@ -2,8 +2,10 @@ import redis
 import threading
 import traceback
 import numpy as np
+from pathlib import Path
 from config import REDIS_HOST, REDIS_PORT
 from PySide2.QtCore import QObject
+from PySide2.QtWidgets import QFileDialog
 
 
 class RedisPublisher(QObject):
@@ -41,7 +43,7 @@ class RedisLogger(QObject):
         self.redis = redis.Redis(REDIS_HOST, REDIS_PORT)
         self.subscription = self.redis.pubsub()    # PubSub instance has no connection to Redis server yet at instantiation
         self.subscription_thread = None
-        self.wfile = None
+        self.file = None
 
         threading.excepthook = self._handle_redis_exceptions
 
@@ -49,11 +51,16 @@ class RedisLogger(QObject):
         subscribed = self._subscribe()
         if not subscribed:
             return
-        if self.wfile:
-            print("There's a file open already.")
+        if self.file:
+            print(f"Already writing to a file at {self.file.name}.")
             return
-        self.wfile = open("redisDataDummy.txt", "a+")    # subscription_thread is already running and starts writing to wfile
-        print("Started recording.")
+        default_file_name = "OpenHRV_Redis_Data"
+        save_path = QFileDialog.getSaveFileName(None, "Create file",
+                                                default_file_name)[0]
+        if not save_path:    # user cancelled or closed file dialog
+            save_path = str(Path.cwd().joinpath(default_file_name))
+        self.file = open(f"{save_path}.tsv", "a+")    # subscription_thread is already running and starts writing to wfile
+        print(f"Started recording to {self.file.name}.")
 
     def save_recording(self):
         """Called in three cases:
@@ -74,11 +81,11 @@ class RedisLogger(QObject):
         self.subscription.close()    # terminates connection to Redis server
 
     def _close_file(self):
-        if not self.wfile:
+        if not self.file:
             return
-        print("Saving recording.")
-        self.wfile.close()
-        self.wfile = None
+        self.file.close()
+        print(f"Saved recording at {self.file.name}.")
+        self.file = None
 
     def _handle_redis_exceptions(self, args):
         print(f"PubSub thread interrupted: \n {traceback.print_tb(args.exc_traceback)}")
@@ -99,8 +106,8 @@ class RedisLogger(QObject):
         return subscribed
 
     def _write_to_file(self, data):
-        if not self.wfile:
+        if not self.file:
             return
         print(f"Logging: {data}.")
-        self.wfile.write(str(data["data"]))
-        self.wfile.write("\n")
+        self.file.write(str(data["data"]))
+        self.file.write("\n")
