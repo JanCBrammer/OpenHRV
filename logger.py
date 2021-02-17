@@ -49,43 +49,49 @@ class RedisLogger(QObject):
         subscribed = self._subscribe()
         if not subscribed:
             return
-        # TODO: make sure to not open multiple files (i.e., only write to a single file at once)
-        self.wfile = open("redisDataDummy.txt", "a+")
-        self.subscription_thread = self.subscription.run_in_thread(sleep_time=0.001)     # Redis connection exceptions are handled with excepthook
+        if self.wfile:
+            print("There's a file open already.")
+            return
+        self.wfile = open("redisDataDummy.txt", "a+")    # subscription_thread is already running and starts writing to wfile
         print("Started recording.")
 
     def save_recording(self):
-        if self.wfile:
-            print("Saving recording.")
-            self.wfile.close()
-            self.wfile = None
-        self._close_subscription_thread()
+        """Called in three cases:
+        1. User saves recording.
+        2. User closes app while recording
+        3. Redis server drops out while recording (_handle_redis_exception())
+        """
+        self._close_file()
+        self._close_subscription()
 
-    def shutdown(self):
-        """Only called when application is closed."""
-        if not self.subscription_thread:
-            return
-        print("Shutting down RedisLogger.")
-        self.subscription.punsubscribe()
-        self.save_recording()
-
-    def _close_subscription_thread(self):
+    def _close_subscription(self):
         if not self.subscription_thread:
             return
         print("Closing subscription thread.")
         self.subscription_thread.stop()
         self.subscription_thread = None
+        self.subscription.punsubscribe()
         self.subscription.close()    # terminates connection to Redis server
+
+    def _close_file(self):
+        if not self.wfile:
+            return
+        print("Saving recording.")
+        self.wfile.close()
+        self.wfile = None
 
     def _handle_redis_exceptions(self, args):
         print(f"PubSub thread interrupted: \n {traceback.print_tb(args.exc_traceback)}")
         self.save_recording()
 
     def _subscribe(self):
-        # TODO: make sure to not re-subscribe
         subscribed = False
+        if self.subscription_thread is not None:
+            print("Already subscribed.")
+            return subscribed    # don't re-subscribe
         try:
             self.subscription.psubscribe(**{"*": self._write_to_file})    # subscribe to all channels by matching everything; instantiates connection to Redis server
+            self.subscription_thread = self.subscription.run_in_thread(sleep_time=0.001)     # Redis connection exceptions are handled with threading.excepthook
             subscribed = True
         except redis.exceptions.ConnectionError as e:
             print("Couldn't subscribe.")
@@ -93,8 +99,8 @@ class RedisLogger(QObject):
         return subscribed
 
     def _write_to_file(self, data):
-        print(f"Logging: {data}.")
         if not self.wfile:
             return
+        print(f"Logging: {data}.")
         self.wfile.write(str(data["data"]))
         self.wfile.write("\n")

@@ -50,7 +50,7 @@ class View(QMainWindow):
         self.redis_logger = RedisLogger()
         self.redis_logger_thread = QThread(self)
         self.redis_logger.moveToThread(self.redis_logger_thread)
-        self.redis_logger_thread.finished.connect(self.redis_logger.shutdown)
+        self.redis_logger_thread.finished.connect(self.redis_logger.save_recording)
 
         self.ibis_plot = pg.PlotWidget()
         self.ibis_plot.setBackground("w")
