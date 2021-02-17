@@ -2,6 +2,7 @@ import redis
 import threading
 import traceback
 import numpy as np
+from datetime import datetime
 from pathlib import Path
 from config import REDIS_HOST, REDIS_PORT
 from PySide2.QtCore import QObject
@@ -40,7 +41,7 @@ class RedisLogger(QObject):
     def __init__(self):
         super().__init__()
 
-        self.redis = redis.Redis(REDIS_HOST, REDIS_PORT)
+        self.redis = redis.Redis(REDIS_HOST, REDIS_PORT, decode_responses=True)
         self.subscription = self.redis.pubsub()    # PubSub instance has no connection to Redis server yet at instantiation
         self.subscription_thread = None
         self.file = None
@@ -54,12 +55,9 @@ class RedisLogger(QObject):
         if self.file:
             print(f"Already writing to a file at {self.file.name}.")
             return
-        default_file_name = "OpenHRV_Redis_Data"
-        save_path = QFileDialog.getSaveFileName(None, "Create file",
-                                                default_file_name)[0]
-        if not save_path:    # user cancelled or closed file dialog
-            save_path = str(Path.cwd().joinpath(default_file_name))
-        self.file = open(f"{save_path}.tsv", "a+")    # subscription_thread is already running and starts writing to wfile
+        self.file = self._open_file()    # subscription_thread is already running and starts writing to wfile
+        with threading.Lock():    # prevent subscription_thread from writing to file while writing header
+            self.file.write("event\tvalue\ttimestamp\n")    # header
         print(f"Started recording to {self.file.name}.")
 
     def save_recording(self):
@@ -109,5 +107,20 @@ class RedisLogger(QObject):
         if not self.file:
             return
         print(f"Logging: {data}.")
-        self.file.write(str(data["data"]))
-        self.file.write("\n")
+        if data["type"] != "pmessage":
+            return
+        key = data["channel"]
+        val = data["data"]
+        timestamp = datetime.now().isoformat()
+        self.file.write(f"{key}\t{val}\t{timestamp}\n")
+
+    @staticmethod
+    def _open_file():
+        current_time = datetime.now().strftime("%Y.%m.%d_%H.%M.%S")
+        default_file_name = f"OpenHRV_Redis_Data_{current_time}"
+        save_path = QFileDialog.getSaveFileName(None, "Create file",
+                                                default_file_name)[0]
+        if not save_path:    # user cancelled or closed file dialog
+            save_path = str(Path.cwd().joinpath(default_file_name))
+        file = open(f"{save_path}.tsv", "a+")
+        return file
