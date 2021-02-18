@@ -45,6 +45,7 @@ class View(QMainWindow):
         self.redis_publisher = RedisPublisher(self.model)
         self.redis_publisher_thread = QThread(self)
         self.redis_publisher.moveToThread(self.redis_publisher_thread)
+        self.redis_publisher_thread.started.connect(self.redis_publisher.monitor.start)
         self.signals.annotation.connect(self.redis_publisher.publish)
 
         self.redis_logger = RedisLogger()

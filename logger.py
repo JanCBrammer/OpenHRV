@@ -1,4 +1,5 @@
 import redis
+import time
 import threading
 import traceback
 import numpy as np
@@ -16,6 +17,8 @@ class RedisPublisher(QObject):
 
         self.model = model
         self.redis = redis.Redis(REDIS_HOST, REDIS_PORT)    # connection to server is not established at instantiation, but once first command to server is issued (i.e., first publish() call)
+        self.connected = True    # will be set to False in case Redis server is down
+        self.monitor = threading.Thread(target=self.wait_for_connection, daemon=True)    # daemon dies as soon as app is shut down, no specific shutdown required
 
         self.model.ibis_buffer_update.connect(self.publish)
         self.model.mean_hrv_update.connect(self.publish)
@@ -24,16 +27,30 @@ class RedisPublisher(QObject):
         self.model.hrv_target_update.connect(self.publish)
         self.model.biofeedback_update.connect(self.publish)
 
+    def wait_for_connection(self):
+        while True:
+            print("Checking availability Redis server.")
+            try:
+                self.redis.ping()    # raises if server is down
+                print("Redis server is up.")
+                self.connected = True
+            except redis.exceptions.ConnectionError as e:
+                print("Redis server is down.")
+                self.connected = False
+            time.sleep(5)
+
     def publish(self, value):
+        if not self.connected:
+            return    # don't try to connect to server with publish commands while it's down
         key, val = value
         if isinstance(val, (list, np.ndarray)):
             val = val[-1]
         if isinstance(val, np.int32):
             val = int(val)
         try:
-            self.redis.publish(key, val)
+            self.redis.publish(key, val)    # tries to establish connection to server
         except redis.exceptions.ConnectionError as e:
-            print(e)    # client (re)-connects automatically; as soon as server is back up (in case of previous outage) client-server communication resumes
+            print(e)
 
 
 class RedisLogger(QObject):
