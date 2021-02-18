@@ -29,7 +29,7 @@ class Model(QObject):
         self._last_ibi_extreme = 0
         self._mac_addresses = []
         self._breathing_rate = 6.
-        self._hrv_mean_window = 10
+        self._hrv_mean_window = 15
         self._hrv_target = 200
         self._duration_current_phase = 0
 
@@ -123,7 +123,6 @@ class Model(QObject):
         self.mean_hrv_update.emit(("meanhrv", self._mean_hrv_buffer))
         print(f"Mean HRV: {value}")
 
-
     @property
     def ibis_seconds(self):
         return self._ibis_seconds
@@ -148,14 +147,6 @@ class Model(QObject):
     def set_breathing_rate(self, value):
         self._breathing_rate = (value + 8) / 2    # force values into [4, 7], step .5
         self.pacer_rate_update.emit(("pacerrate", self._breathing_rate))
-
-    @Property(int)
-    def hrv_mean_window(self):
-        return self._hrv_mean_window
-
-    @Slot(int)
-    def set_hrv_mean_window(self, value):
-        self._hrv_mean_window = value
 
     @Property(int)
     def hrv_target(self):

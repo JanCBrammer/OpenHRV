@@ -3,8 +3,8 @@ import asyncio
 from utils import valid_mac
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
-                               QSlider, QSpinBox, QGroupBox, QFormLayout,
-                               QCheckBox, QLineEdit)
+                               QSlider, QGroupBox, QFormLayout, QCheckBox,
+                               QLineEdit)
 from PySide2.QtCore import Qt, QThread, Signal, QObject
 from PySide2.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
@@ -135,15 +135,6 @@ class View(QMainWindow):
         self.connect_button = QPushButton("Connect")
         self.connect_button.clicked.connect(self.connect_sensor)
 
-        self.hrv_smoothwindow_label = QLabel("Smoothing Window")
-
-        self.hrv_smoothwindow = QSpinBox()
-        self.hrv_smoothwindow.setRange(0, 15)
-        self.hrv_smoothwindow.setSingleStep(1)
-        self.hrv_smoothwindow.setSuffix(" seconds")
-        self.hrv_smoothwindow.valueChanged.connect(self.model.set_hrv_mean_window)
-        self.hrv_smoothwindow.setValue(self.model.hrv_mean_window)
-
         self.start_recording_button = QPushButton("Start")
         self.start_recording_button.clicked.connect(self.redis_logger.start_recording)
 
@@ -175,7 +166,6 @@ class View(QMainWindow):
         self.hlayout1.addWidget(self.device_panel, stretch=25)
 
         self.hrv_config = QFormLayout()
-        self.hrv_config.addRow(self.hrv_smoothwindow_label, self.hrv_smoothwindow)
         self.hrv_config.addRow(self.hrv_target_label, self.hrv_target)
         self.hrv_panel = QGroupBox("HRV Settings")
         self.hrv_panel.setLayout(self.hrv_config)
