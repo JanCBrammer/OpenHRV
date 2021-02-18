@@ -6,7 +6,7 @@ import numpy as np
 from datetime import datetime
 from pathlib import Path
 from config import REDIS_HOST, REDIS_PORT
-from PySide2.QtCore import QObject
+from PySide2.QtCore import QObject, Signal
 from PySide2.QtWidgets import QFileDialog
 
 
@@ -55,6 +55,8 @@ class RedisPublisher(QObject):
 
 class RedisLogger(QObject):
 
+    recording_status = Signal(int)
+
     def __init__(self):
         super().__init__()
 
@@ -75,6 +77,7 @@ class RedisLogger(QObject):
         self.file = self._open_file()    # subscription_thread is already running and starts writing to wfile
         with threading.Lock():    # prevent subscription_thread from writing to file while writing header
             self.file.write("event\tvalue\ttimestamp\n")    # header
+        self.recording_status.emit(0)
         print(f"Started recording to {self.file.name}.")
 
     def save_recording(self):
@@ -99,6 +102,7 @@ class RedisLogger(QObject):
         if not self.file:
             return
         self.file.close()
+        self.recording_status.emit(1)
         print(f"Saved recording at {self.file.name}.")
         self.file = None
 

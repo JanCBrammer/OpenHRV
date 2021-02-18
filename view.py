@@ -4,7 +4,7 @@ from utils import valid_mac
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
                                QSlider, QGroupBox, QFormLayout, QCheckBox,
-                               QLineEdit)
+                               QLineEdit, QProgressBar, QGridLayout)
 from PySide2.QtCore import Qt, QThread, Signal, QObject
 from PySide2.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
@@ -52,6 +52,7 @@ class View(QMainWindow):
         self.redis_logger_thread = QThread(self)
         self.redis_logger.moveToThread(self.redis_logger_thread)
         self.redis_logger_thread.finished.connect(self.redis_logger.save_recording)
+        self.redis_logger.recording_status.connect(self.show_recording_status)
 
         self.ibis_plot = pg.PlotWidget()
         self.ibis_plot.setBackground("w")
@@ -147,6 +148,10 @@ class View(QMainWindow):
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
+        self.recording_status_label = QLabel("Status:")
+        self.recording_statusbar = QProgressBar()
+        self.recording_statusbar.setRange(0, 1)
+
         self.vlayout0 = QVBoxLayout(self.central_widget)
 
         self.hlayout0 = QHBoxLayout()
@@ -178,10 +183,13 @@ class View(QMainWindow):
         self.pacer_panel.setLayout(self.pacer_config)
         self.hlayout1.addWidget(self.pacer_panel, stretch=25)
 
-        self.recording_config = QFormLayout()
-        self.recording_config.addRow(self.start_recording_button,
-                                     self.save_recording_button)
-        self.recording_config.addRow(self.annotation, self.annotation_button)
+        self.recording_config = QGridLayout()
+        self.recording_config.addWidget(self.start_recording_button, 0, 0)
+        self.recording_config.addWidget(self.save_recording_button, 0, 1)
+        self.recording_config.addWidget(self.recording_statusbar, 0, 2)
+        self.recording_config.addWidget(self.annotation, 1, 0, 1, 2)    # row, column, rowspan, columnspan
+        self.recording_config.addWidget(self.annotation_button, 1, 2)
+
         self.recording_panel = QGroupBox("Recording")
         self.recording_panel.setLayout(self.recording_config)
         self.hlayout1.addWidget(self.recording_panel, stretch=25)
@@ -247,6 +255,9 @@ class View(QMainWindow):
     def toggle_pacer(self):
         visible = self.pacer_plot.isVisible()
         self.pacer_plot.setVisible(not visible)
+
+    def show_recording_status(self, status):
+        self.recording_statusbar.setRange(0, status)    # indicates busy state if progress is 0
 
     def emit_annotation(self):
         self.signals.annotation.emit(("eventmarker", self.annotation.text()))
