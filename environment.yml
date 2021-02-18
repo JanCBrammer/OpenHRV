@@ -3,9 +3,10 @@ channels:
   - conda-forge
 dependencies:
   - python=3.8
-  - nomkl    # necessary for building with PyInstaller on Windowns, since installing numpy (pyqtgraph dependency) with MKL currently breaks pyinstaller
+  - nomkl    # necessary for building with PyInstaller on Windows, since installing numpy (pyqtgraph dependency) with MKL currently breaks pyinstaller
   - pyqtgraph
   - pyside2
+  - redis-py
   - pyinstaller    # only for building
   - pip
   - pip:
