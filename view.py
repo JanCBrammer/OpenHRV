@@ -107,6 +107,7 @@ class View(QMainWindow):
         self.pacer_plot.addItem(self.pacer_disc)
 
         self.pacer_rate = QSlider(Qt.Horizontal)
+        self.pacer_rate.setTracking(False)
         self.pacer_rate.setRange(0, 6)    # transformed to bpm [4, 7], step .5 by model
         self.pacer_rate.valueChanged.connect(self.model.set_breathing_rate)
         self.pacer_rate.setSliderPosition(4)    # corresponds to 6 bpm
