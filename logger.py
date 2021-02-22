@@ -12,20 +12,12 @@ from PySide2.QtWidgets import QFileDialog
 
 class RedisPublisher(QObject):
 
-    def __init__(self, model):
+    def __init__(self):
         super().__init__()
 
-        self.model = model
         self.redis = redis.Redis(REDIS_HOST, REDIS_PORT)    # connection to server is not established at instantiation, but once first command to server is issued (i.e., first publish() call)
         self.connected = True    # will be set to False in case Redis server is down
         self.monitor = threading.Thread(target=self.wait_for_connection, daemon=True)    # daemon dies as soon as app is shut down, no specific shutdown required
-
-        self.model.ibis_buffer_update.connect(self.publish)
-        self.model.mean_hrv_update.connect(self.publish)
-        self.model.mac_addresses_update.connect(self.publish)
-        self.model.pacer_rate_update.connect(self.publish)
-        self.model.hrv_target_update.connect(self.publish)
-        self.model.biofeedback_update.connect(self.publish)
 
     def wait_for_connection(self):
         while True:
