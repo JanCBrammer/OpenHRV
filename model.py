@@ -44,7 +44,7 @@ class Model(QObject):
         self._ibis_seconds = self._ibis_seconds - value / 1000
         self._ibis_seconds = np.roll(self._ibis_seconds, -1)
         self._ibis_seconds[-1] = -value / 1000
-        self.ibis_buffer_update.emit(("ibi", self.ibis_buffer))
+        self.ibis_buffer_update.emit(("InterBeatInterval", self.ibis_buffer))
         self.compute_local_hrv()
 
     def compute_local_hrv(self):
@@ -97,7 +97,7 @@ class Model(QObject):
         y = Vmax * x**n / (K**n + x**n)
 
         print(f"Biofeedback score: {y}")
-        self.biofeedback_update.emit(("biofeedback", y))
+        self.biofeedback_update.emit(("Feedback", y))
 
     @property
     def hrv_buffer(self):
@@ -120,7 +120,7 @@ class Model(QObject):
         self.compute_biofeedback(value)
         self._mean_hrv_buffer = np.roll(self._mean_hrv_buffer, -1)
         self._mean_hrv_buffer[-1] = value
-        self.mean_hrv_update.emit(("meanhrv", self._mean_hrv_buffer))
+        self.mean_hrv_update.emit(("MeanHrv", self._mean_hrv_buffer))
         print(f"Mean HRV: {value}")
 
     @property
@@ -146,7 +146,7 @@ class Model(QObject):
     @Slot(float)
     def set_breathing_rate(self, value):
         self._breathing_rate = (value + 8) / 2    # force values into [4, 7], step .5
-        self.pacer_rate_update.emit(("pacerrate", self._breathing_rate))
+        self.pacer_rate_update.emit(("PacerRate", self._breathing_rate))
 
     @Property(int)
     def hrv_target(self):
@@ -155,7 +155,7 @@ class Model(QObject):
     @Slot(int)
     def set_hrv_target(self, value):
         self._hrv_target = value
-        self.hrv_target_update.emit(("hrvtarget", value))
+        self.hrv_target_update.emit(("HrvTarget", value))
 
     @property
     def pacer_coordinates(self):
@@ -164,7 +164,7 @@ class Model(QObject):
     @pacer_coordinates.setter
     def pacer_coordinates(self, value):
         self._pacer_coordinates = value
-        self.pacer_disk_update.emit(("pacercoordinates", value))
+        self.pacer_disk_update.emit(("PacerCoordinates", value))
 
     @property
     def current_ibi_phase(self):
@@ -200,4 +200,4 @@ class Model(QObject):
         if not mac_addresses:
             mac_addresses = ["None found!"]
         self._mac_addresses = mac_addresses
-        self.mac_addresses_update.emit(("sensormacs", self._mac_addresses))
+        self.mac_addresses_update.emit(("SensorMacs", self._mac_addresses))
