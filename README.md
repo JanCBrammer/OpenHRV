@@ -42,8 +42,7 @@ repeating the process above.
 You can personalize the HRV target using the `Target` slider. After you've
 been training for a while you will have a good idea of what's an attainable target
 for you (this can vary depending on how much sleep or coffee you had etc.). You
-can adjust the target anytime during a session if you find the current target too
-easy or difficult.
+can adjust the target anytime if you find the current target too easy or difficult.
 
 ![adjust_hrv_target](adjust_hrv_target.gif)
 
@@ -52,19 +51,18 @@ The breathing pacer can help you increase your HRV. Breathe out as the blue
 disk shrinks and breathe in as it gets larger. Explore how different breathing rates
 affect your HRV by adjusting the `Rate` slider anytime during a session. Everyone
 has a personal breathing rate at which their HRV is at its highest. Usually that
-rate is somewhere between 4 and 7 breaths per minute.
+rate is somewhere between 4 and 7 breaths per minute. You can also hide the pacer
+by unchecking the `Show pacer` box if you want to practice regulating HRV on your own.
 
 ![adjust_breathing_pacer](adjust_breathing_pacer.gif)
 
 
 ### Biofeedback training
-Below you can watch heart rate variability biofeedback training in action. Note
-how the heart rate (blue curve) fluctuates along with the breathing pacer. These
-fluctuations are the "variability" in HRV. HRV (white curve) increases as breath
-and heart rate continue to synchronize. Your goal is to get the fluctuations
-large and regular. There is no "best" training target for HRV (as in "everyone
-should achieve an HRV of 500 msec"). Try to increase HRV relative to what you
-have achieved before and be aware that it can take a fair bit of practice to
-improve.
+Below you can watch heart rate variability (HRV) biofeedback training in action. Note
+how the blue heart rate curve rises and falls. These fluctuations are the "variability"
+in HRV. Your goal is to get the fluctuations large and regular. As you get better at this,
+the white HRV curve will go up. There is no "ideal" HRV, as in "everyone should achieve
+an HRV of 500 msec". Try to increase HRV relative to what you have achieved before
+and be aware that it can take a fair bit of practice to improve.
 
 ![biofeedback_demo](biofeedback_demo.gif)
