@@ -148,7 +148,13 @@ class View(QMainWindow):
         self.save_recording_button = QPushButton("Save")
         self.save_recording_button.clicked.connect(self.redis_logger.save_recording)
 
-        self.annotation = QLineEdit()
+        self.annotation = QComboBox()
+        self.annotation.setEditable(True)
+        self.annotation.setDuplicatesEnabled(False)
+        self.annotation.addItems(["start_baseline", "end_baseline",
+                                  "start_bf", "end_bf",
+                                  "start_nobf", "end_nobf"])
+        self.annotation.setMaxCount(10)    # user can configure up to 4 additional custom annotations
         self.annotation_button = QPushButton("Annotate")
         self.annotation_button.clicked.connect(self.emit_annotation)
         self.central_widget = QWidget()
@@ -266,4 +272,4 @@ class View(QMainWindow):
         self.recording_statusbar.setRange(0, status)    # indicates busy state if progress is 0
 
     def emit_annotation(self):
-        self.signals.annotation.emit(("eventmarker", self.annotation.text()))
+        self.signals.annotation.emit(("eventmarker", self.annotation.currentText()))
