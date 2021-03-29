@@ -129,8 +129,8 @@ class RedisLogger(QObject):
 
     @staticmethod
     def _open_file():
-        current_time = datetime.now().strftime("%Y.%m.%d_%H.%M.%S")
-        default_file_name = f"sub-00_ses-00_task-X_time-{current_time}"
+        current_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+        default_file_name = f"sub-?_day-?_task-?_time-{current_time}"
         save_path = QFileDialog.getSaveFileName(None, "Create file",
                                                 default_file_name)[0]
         if not save_path:    # user cancelled or closed file dialog
