@@ -4,7 +4,7 @@ channels:
 dependencies:
   - python=3.8
   - nomkl    # necessary for building with PyInstaller on Windows, since installing numpy (pyqtgraph dependency) with MKL currently breaks pyinstaller
-  - pyqtgraph
+  - pyqtgraph=0.11.0    # pin to avoid trouble with importing pyqtgraph.graphicsItems.ViewBox.axisCtrlTemplate_pyside2 in 0.12.0
   - pyside2
   - redis-py
   - pyinstaller    # only for building
