@@ -113,7 +113,6 @@ class SensorClient(QObject):
             try:
                 print(f"Connecting to {self._mac}")
                 await self._ble_client.connect()    # potential exceptions: BleakError (device not found), asyncio TimeoutError
-                await self._ble_client.is_connected()
                 print(f"Starting notification for {self._mac}.")
                 await self._ble_client.start_notify(HR_UUID, self._data_handler)
                 self._listening = True
