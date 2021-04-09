@@ -21,10 +21,8 @@ class RedisPublisher(QObject):
 
     def wait_for_connection(self):
         while True:
-            print("Checking availability Redis server.")
             try:
                 self.redis.ping()    # raises if server is down
-                print("Redis server is up.")
                 self.connected = True
             except redis.exceptions.ConnectionError as e:
                 print("Redis server is down.")
