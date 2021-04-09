@@ -241,7 +241,7 @@ class View(QMainWindow):
         if not valid_mac(mac):
             print("Invalid MAC.")
             return
-        asyncio.run_coroutine_threadsafe(self.sensor.reconnect_internal(mac),
+        asyncio.run_coroutine_threadsafe(self.sensor.connect_client(mac),
                                          self.sensor.loop)
 
     def plot_ibis(self, ibis):

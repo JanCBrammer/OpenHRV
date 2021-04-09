@@ -25,24 +25,24 @@ class SensorScanner(QObject):
 
 
 class SensorClient(QObject):
-    """Stay connected to the current MAC.
-
-    Perpetually try to reconnect to the current MAC after external or internal
-    disconnection.
+    """(Re-) connect a BLE client to a server at MAC.
 
     Notes
     -----
-    - external disconnection:
-        - sensor lost skin contact
-        - sensor out of range
+    external disconnection:
+    - sensor lost skin contact
+    - sensor out of range
 
-    - internal disconnection:
-        - other parts of the application (e.g., View) actively request
-        disconnection
+    internal disconnection:
+    - user requests connection to another sensor
 
-    `await this` means "do `this` and wait for it to return". In the meantime,
-    if `this` chooses to suspend execution, other tasks which have already
-    started elsewhere may run.
+    `await x` means "do `x` and wait for it to return". In the meantime,
+    if `x` chooses to suspend execution, other tasks which have already
+    started elsewhere may run. Also see [1].
+
+    References
+    ----------
+    [1] https://hynek.me/articles/waiting-in-asyncio/
     """
 
     ibi_update = Signal(object)
@@ -50,8 +50,8 @@ class SensorClient(QObject):
     def __init__(self):
         super().__init__()
         self._ble_client = None
-        self._listening = False
         self._mac = None
+        self._listening = False
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
@@ -61,55 +61,31 @@ class SensorClient(QObject):
 
     async def stop(self):
         """Shut down client before app is closed."""
-        try:
-            await self._ble_client.stop_notify(HR_UUID)
-            print("Shut down notification.")
-            self._ble_client.set_disconnected_callback(None)    # deregister disconnection callback to prevent reconnection attempt
-            await self._ble_client.disconnect()
-            print("Disconnected client.")
-        except (Exception, BleakError) as error:
-            print(f"Reconnection exception: {error}.")
+        await self._discard_client()
         self.loop.stop()
 
-    async def reconnect_internal(self, mac):
-        """Handle internal disconnection."""
-        print("Internal reconnection request.")
-        tasks = asyncio.all_tasks(self.loop)
-        if len(tasks) > 1:
-            # Necessary to ensure sequential execution of reconnection requests.
-            # Yes, this contradicts the asynchronous paradigm. However, bleak is
-            # currently the only Python package that somewhat reliably works
-            # with BLE on Windows. Hence, forcing bleak to play nicely with the
-            # otherwise synchronous Qt event loop seems to be an option to
-            # prevent severely messed up Sensor state (given my current, limited
-            # knowledge of asyncio).
-            print("Waiting for current task to finish...")
+    async def connect_client(self, mac):
+        """Connect to BLE server."""
+        if mac == self._mac:
+            print("Client already connected to this MAC.")
             return
+        await self._discard_client()
         self._mac = mac
-        try:
-            await self._ble_client.stop_notify(HR_UUID)
-            print("Shut down notification.")
-            self._ble_client.set_disconnected_callback(None)    # deregister disconnection callback to prevent reconnection attempt
-            await self._ble_client.disconnect()
-            print("Disconnected client.")
-        except (Exception, BleakError) as error:
-            print(f"Reconnection exception: {error}.")
         await self._connect()
 
-    def _reconnect_external(self, client):
-        """Handle external disconnection."""
-        self.loop.create_task(self._connect())
-
     async def _connect(self):
-        """Perpetually try to connect to current MAC.
-
-        Handle internal and external disconnections.
-        """
+        """Try connecting to current MAC."""
         self._ble_client = BleakClient(self._mac,
-                                       disconnected_callback=self._reconnect_external)
-        print(f"client: {self._ble_client}")
+                                       disconnected_callback=self._cleanup_external_disconnection)
+        print(f"Trying to connect client {self._ble_client}")
         self._listening = False
+        max_retries = 5
+        n_retries = 0
         while not self._listening:
+            if n_retries > max_retries:
+                print(f"Stopped trying to connect to {self._mac} after {max_retries} attempts.")
+                await self._discard_client()
+                break
             try:
                 print(f"Connecting to {self._mac}")
                 await self._ble_client.connect()    # potential exceptions: BleakError (device not found), asyncio TimeoutError
@@ -117,8 +93,24 @@ class SensorClient(QObject):
                 await self._ble_client.start_notify(HR_UUID, self._data_handler)
                 self._listening = True
             except (BleakError, asyncio.exceptions.TimeoutError, Exception) as error:
-                print(f"Connection exception: {error}")
-                print("Retrying...")
+                print(f"Connection exception: {error}\nRetrying...")
+            n_retries += 1
+
+    def _cleanup_external_disconnection(self, client):
+        """Handle external disconnection."""
+        self.loop.create_task(self._discard_client())
+
+    async def _discard_client(self):
+        try:
+            self._ble_client.set_disconnected_callback(None)    # deregister disconnection callback
+            await self._ble_client.disconnect()
+            print("Disconnected client.")
+        except (Exception, BleakError) as error:
+            print(f"Couldn't disconnect client: {error}.")
+        finally:    # runs before try block exits
+            self._ble_client = None
+            self._mac = None
+            print("Discarded client.")
 
     def _data_handler(self, caller, data):    # caller (UUID) unused but mandatory positional argument
         """
