@@ -35,6 +35,7 @@ class View(QMainWindow):
         self.scanner_thread = QThread(self)
         self.scanner.moveToThread(self.scanner_thread)
         self.scanner.mac_update.connect(self.model.set_mac_addresses)
+        self.scanner.status_update.connect(self.show_status)
 
         self.sensor = SensorClient()
         self.sensor_thread = QThread(self)
@@ -164,6 +165,8 @@ class View(QMainWindow):
         self.recording_statusbar = QProgressBar()
         self.recording_statusbar.setRange(0, 1)
 
+        self.statusbar = self.statusBar()
+
         self.vlayout0 = QVBoxLayout(self.central_widget)
 
         self.hlayout0 = QHBoxLayout()
@@ -270,6 +273,12 @@ class View(QMainWindow):
 
     def show_recording_status(self, status):
         self.recording_statusbar.setRange(0, status)    # indicates busy state if progress is 0
+
+    def show_status(self, status):
+        if status == "clear_message":
+            self.statusbar.clearMessage()
+            return
+        self.statusbar.showMessage(status, 10000)
 
     def emit_annotation(self):
         self.signals.annotation.emit(("eventmarker", self.annotation.currentText()))

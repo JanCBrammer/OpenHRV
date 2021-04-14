@@ -9,6 +9,7 @@ from config import HR_UUID
 class SensorScanner(QObject):
 
     mac_update = Signal(object)
+    status_update = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -21,7 +22,10 @@ class SensorScanner(QObject):
 
     def scan(self):
         print("Searching for sensors...")
+        self.status_update.emit("Searching for sensors...")
         asyncio.run(self._scan())
+        self.status_update.emit("clear_message")
+
 
 
 class SensorClient(QObject):
@@ -46,6 +50,7 @@ class SensorClient(QObject):
     """
 
     ibi_update = Signal(object)
+    status_update = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -67,7 +72,8 @@ class SensorClient(QObject):
     async def connect_client(self, mac):
         """Connect to BLE server."""
         if mac == self._mac:
-            print("Client already connected to this MAC.")
+            print(f"Client already connected to {mac}.")
+            self.status_update(f"Client already connected to {mac}.")
             return
         await self._discard_client()
         self._mac = mac
