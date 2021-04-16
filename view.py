@@ -41,6 +41,7 @@ class View(QMainWindow):
         self.sensor_thread = QThread(self)
         self.sensor.moveToThread(self.sensor_thread)
         self.sensor.ibi_update.connect(self.model.set_ibis_buffer)
+        self.sensor.status_update.connect(self.show_status)
         self.sensor_thread.started.connect(self.sensor.run)
 
         self.redis_publisher = RedisPublisher()
@@ -60,6 +61,7 @@ class View(QMainWindow):
         self.redis_logger.moveToThread(self.redis_logger_thread)
         self.redis_logger_thread.finished.connect(self.redis_logger.save_recording)
         self.redis_logger.recording_status.connect(self.show_recording_status)
+        self.redis_logger.status_update.connect(self.show_status)
 
         self.ibis_plot = pg.PlotWidget()
         self.ibis_plot.setBackground("w")
@@ -240,9 +242,9 @@ class View(QMainWindow):
         self.redis_logger_thread.wait()
 
     def connect_sensor(self):
-        mac = self.mac_menu.currentText()
+        mac = self.mac_menu.currentText().split(",")[1].strip()    # discard device name
         if not valid_mac(mac):
-            print("Invalid MAC.")
+            print(f"Invalid MAC: {mac}.")
             return
         asyncio.run_coroutine_threadsafe(self.sensor.connect_client(mac),
                                          self.sensor.loop)
@@ -278,7 +280,7 @@ class View(QMainWindow):
         if status == "clear_message":
             self.statusbar.clearMessage()
             return
-        self.statusbar.showMessage(status, 10000)
+        self.statusbar.showMessage(status, 0)
 
     def emit_annotation(self):
         self.signals.annotation.emit(("eventmarker", self.annotation.currentText()))

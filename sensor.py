@@ -17,15 +17,16 @@ class SensorScanner(QObject):
 
     async def _scan(self):
         devices = await self.scanner.discover()
-        polar_devices = [d for d in devices if "Polar" in str(d)]
+        polar_devices = [d for d in devices if "Polar" in str(d.name)]
+        if not polar_devices:
+            self.status_update.emit("Couldn't find sensors.")
+            return
         self.mac_update.emit(polar_devices)
+        self.status_update.emit(f"Found {len(polar_devices)} sensor(s).")
 
     def scan(self):
-        print("Searching for sensors...")
         self.status_update.emit("Searching for sensors...")
         asyncio.run(self._scan())
-        self.status_update.emit("clear_message")
-
 
 
 class SensorClient(QObject):
@@ -72,8 +73,7 @@ class SensorClient(QObject):
     async def connect_client(self, mac):
         """Connect to BLE server."""
         if mac == self._mac:
-            print(f"Client already connected to {mac}.")
-            self.status_update(f"Client already connected to {mac}.")
+            self.status_update.emit(f"Already connected to sensor at {mac}.")
             return
         await self._discard_client()
         self._mac = mac
@@ -83,27 +83,28 @@ class SensorClient(QObject):
         """Try connecting to current MAC."""
         self._ble_client = BleakClient(self._mac,
                                        disconnected_callback=self._cleanup_external_disconnection)
-        print(f"Trying to connect client {self._ble_client}")
         self._listening = False
-        max_retries = 5
+        max_retries = 3
         n_retries = 0
         while not self._listening:
+            self.status_update.emit(f"Trying to connect to sensor at {self._mac}...")
             if n_retries > max_retries:
-                print(f"Stopped trying to connect to {self._mac} after {max_retries} attempts.")
+                self.status_update.emit(f"Stopped trying to connect to sensor at {self._mac} after {max_retries} attempts.")
                 await self._discard_client()
                 break
             try:
-                print(f"Connecting to {self._mac}")
                 await self._ble_client.connect()    # potential exceptions: BleakError (device not found), asyncio TimeoutError
-                print(f"Starting notification for {self._mac}.")
                 await self._ble_client.start_notify(HR_UUID, self._data_handler)
                 self._listening = True
+                self.status_update.emit(f"Successfully connected to sensor at {self._mac}.")
             except (BleakError, asyncio.exceptions.TimeoutError, Exception) as error:
                 print(f"Connection exception: {error}\nRetrying...")
             n_retries += 1
 
+
     def _cleanup_external_disconnection(self, client):
         """Handle external disconnection."""
+        self.status_update.emit(f"Lost connection to sensor at {self._mac}.")
         self.loop.create_task(self._discard_client())
 
     async def _discard_client(self):
@@ -144,5 +145,4 @@ class SensorClient(QObject):
             for i in range(2, len(bytes), 2):
                 ibi = data[i] + 256 * data[i + 1]
                 ibi = ceil(ibi / 1024 * 1000)    # convert 1/1024 sec format to milliseconds
-                print(f"IBI: {ibi}")
                 self.ibi_update.emit(ibi)

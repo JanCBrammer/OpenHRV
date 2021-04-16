@@ -59,7 +59,6 @@ class Model(QObject):
         local_hrv = abs(self._last_ibi_extreme - current_ibi_extreme)
         self.hrv_buffer = local_hrv
         # potentially enforce constraints on local power here
-        print(f"Local HRV: {local_hrv}")
 
         seconds_current_phase = np.floor(self._duration_current_phase / 1000)
         self._mean_hrv_seconds = self._mean_hrv_seconds - seconds_current_phase
@@ -96,7 +95,6 @@ class Model(QObject):
         n = 3    # Hill coefficient, determines steepness of curve
         y = Vmax * x**n / (K**n + x**n)
 
-        print(f"Biofeedback score: {y}")
         self.biofeedback_update.emit(("Feedback", y))
 
     @property
@@ -121,7 +119,6 @@ class Model(QObject):
         self._mean_hrv_buffer = np.roll(self._mean_hrv_buffer, -1)
         self._mean_hrv_buffer[-1] = value
         self.mean_hrv_update.emit(("MeanHrv", self._mean_hrv_buffer))
-        print(f"Mean HRV: {value}")
 
     @property
     def ibis_seconds(self):
@@ -196,8 +193,6 @@ class Model(QObject):
 
     @Slot(object)
     def set_mac_addresses(self, value):
-        mac_addresses = [v.address for v in value]
-        if not mac_addresses:
-            mac_addresses = ["None found!"]
+        mac_addresses = [f"{v.name}, {v.address}" for v in value]
         self._mac_addresses = mac_addresses
         self.mac_addresses_update.emit(("SensorMacs", self._mac_addresses))
