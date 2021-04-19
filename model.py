@@ -39,11 +39,9 @@ class Model(QObject):
 
     @Slot(object)
     def set_ibis_buffer(self, value):
+        self.ibis_seconds = value
         self._ibis_buffer = np.roll(self._ibis_buffer, -1)
         self._ibis_buffer[-1] = value
-        self._ibis_seconds = self._ibis_seconds - value / 1000
-        self._ibis_seconds = np.roll(self._ibis_seconds, -1)
-        self._ibis_seconds[-1] = -value / 1000
         self.ibis_buffer_update.emit(("InterBeatInterval", self.ibis_buffer))
         self.compute_local_hrv()
 
@@ -61,9 +59,7 @@ class Model(QObject):
         # potentially enforce constraints on local power here
 
         seconds_current_phase = np.floor(self._duration_current_phase / 1000)
-        self._mean_hrv_seconds = self._mean_hrv_seconds - seconds_current_phase
-        self._mean_hrv_seconds = np.roll(self._mean_hrv_seconds, -1)
-        self._mean_hrv_seconds[-1] = -seconds_current_phase
+        self.mean_hrv_seconds = seconds_current_phase
         self._duration_current_phase = 0
 
         self._last_ibi_extreme = current_ibi_extreme
@@ -126,7 +122,9 @@ class Model(QObject):
 
     @ibis_seconds.setter
     def ibis_seconds(self, value):
-        self._ibis_seconds = value
+        self._ibis_seconds = self._ibis_seconds - value / 1000
+        self._ibis_seconds = np.roll(self._ibis_seconds, -1)
+        self._ibis_seconds[-1] = -value / 1000
 
     @property
     def mean_hrv_seconds(self):
@@ -134,7 +132,9 @@ class Model(QObject):
 
     @mean_hrv_seconds.setter
     def mean_hrv_seconds(self, value):
-        self._mean_hrv_seconds = value
+        self._mean_hrv_seconds = self._mean_hrv_seconds - value
+        self._mean_hrv_seconds = np.roll(self._mean_hrv_seconds, -1)
+        self._mean_hrv_seconds[-1] = -value
 
     @Property(float)
     def breathing_rate(self):
