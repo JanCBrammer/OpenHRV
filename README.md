@@ -30,10 +30,10 @@ using the environment.yml [file](https://github.com/JanCBrammer/OpenHRV/blob/mai
 ## User Guide
 
 ### Connect your ECG sensor
-Search your Polar sensor (H7, H9, or H10) by clicking `Scan`. The MAC addresses
+Search your Polar sensor (H7, H9, or H10) by clicking `Scan`. The addresses
 of all detected Polar sensors show up in the drop-down menu. Select your sensor
 from the drop-down menu and click `Connect` in order to establish a connection.
-Connect to another sensor anytime by repeating the process above.
+You can connect to another sensor anytime.
 
 ![connect_sensor](connect_sensor.gif)
 

@@ -1,11 +1,18 @@
 import re
+import platform
 
 
-def valid_mac(mac):
-    """Make sure that MAC matches a valid pattern."""
+def valid_address(address):
+    """Make sure that MAC (Windows, Linux) or UUID (macOS) is valid."""
+    valid = False
+    system = platform.system()
 
-    regex = "[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$"
-    valid = re.match(regex, mac.lower())
+    if system in ["Linux", "Windows"]:    # on MacOS devices are identified by UUID instead of MAC, hence skip the MAC validation
+        regex = re.compile("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$")
+        valid = regex.match(address.lower())
+    elif system == "Darwin":
+        regex = re.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$")
+        valid = regex.match(address.lower())
 
     return valid
 

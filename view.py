@@ -1,6 +1,6 @@
 import pyqtgraph as pg
 import asyncio
-from utils import valid_mac
+from utils import valid_address
 from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
                                QSlider, QGroupBox, QFormLayout, QCheckBox,
@@ -34,7 +34,7 @@ class View(QMainWindow):
         self.scanner = SensorScanner()
         self.scanner_thread = QThread(self)
         self.scanner.moveToThread(self.scanner_thread)
-        self.scanner.mac_update.connect(self.model.set_mac_addresses)
+        self.scanner.address_update.connect(self.model.set_addresses)
         self.scanner.status_update.connect(self.show_status)
 
         self.sensor = SensorClient()
@@ -49,7 +49,7 @@ class View(QMainWindow):
         self.redis_publisher.moveToThread(self.redis_publisher_thread)
         self.model.ibis_buffer_update.connect(self.redis_publisher.publish)
         self.model.mean_hrv_update.connect(self.redis_publisher.publish)
-        self.model.mac_addresses_update.connect(self.redis_publisher.publish)
+        self.model.addresses_update.connect(self.redis_publisher.publish)
         self.model.pacer_rate_update.connect(self.redis_publisher.publish)
         self.model.hrv_target_update.connect(self.redis_publisher.publish)
         self.model.biofeedback_update.connect(self.redis_publisher.publish)
@@ -140,7 +140,7 @@ class View(QMainWindow):
         self.scan_button = QPushButton("Scan")
         self.scan_button.clicked.connect(self.scanner.scan)
 
-        self.mac_menu = QComboBox()
+        self.address_menu = QComboBox()
 
         self.connect_button = QPushButton("Connect")
         self.connect_button.clicked.connect(self.connect_sensor)
@@ -181,7 +181,7 @@ class View(QMainWindow):
         self.hlayout1 = QHBoxLayout()
 
         self.device_config = QFormLayout()
-        self.device_config.addRow(self.scan_button, self.mac_menu)
+        self.device_config.addRow(self.scan_button, self.address_menu)
         self.device_config.addRow(self.connect_button)
         self.device_panel = QGroupBox("ECG Devices")
         self.device_panel.setLayout(self.device_config)
@@ -215,7 +215,7 @@ class View(QMainWindow):
 
         self.model.ibis_buffer_update.connect(self.plot_ibis)
         self.model.mean_hrv_update.connect(self.plot_hrv)
-        self.model.mac_addresses_update.connect(self.list_macs)
+        self.model.addresses_update.connect(self.list_addresses)
         self.model.pacer_disk_update.connect(self.plot_pacer_disk)
         self.model.pacer_rate_update.connect(self.update_pacer_label)
         self.model.hrv_target_update.connect(self.update_hrv_target)
@@ -242,11 +242,11 @@ class View(QMainWindow):
         self.redis_logger_thread.wait()
 
     def connect_sensor(self):
-        mac = self.mac_menu.currentText().split(",")[1].strip()    # discard device name
-        if not valid_mac(mac):
-            print(f"Invalid MAC: {mac}.")
+        address = self.address_menu.currentText().split(",")[1].strip()    # discard device name
+        if not valid_address(address):
+            print(f"Invalid sensor address: {address}.")
             return
-        asyncio.run_coroutine_threadsafe(self.sensor.connect_client(mac),
+        asyncio.run_coroutine_threadsafe(self.sensor.connect_client(address),
                                          self.sensor.loop)
 
     def plot_ibis(self, ibis):
@@ -255,9 +255,9 @@ class View(QMainWindow):
     def plot_hrv(self, hrv):
         self.mean_hrv_signal.setData(self.model.mean_hrv_seconds, hrv[1])
 
-    def list_macs(self, macs):
-        self.mac_menu.clear()
-        self.mac_menu.addItems(macs[1])
+    def list_addresses(self, addresses):
+        self.address_menu.clear()
+        self.address_menu.addItems(addresses[1])
 
     def plot_pacer_disk(self, coordinates):
         self.pacer_disc.setData(*coordinates[1])

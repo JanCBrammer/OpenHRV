@@ -10,7 +10,7 @@ class Model(QObject):
     # value as second element.
     ibis_buffer_update = Signal(tuple)    # tuple(string, np.ndarray)
     mean_hrv_update = Signal(tuple)    # tuple(string, np.ndarray)
-    mac_addresses_update = Signal(tuple)    # tuple(string, list)
+    addresses_update = Signal(tuple)    # tuple(string, list)
     pacer_disk_update = Signal(tuple)    # tuple(string, list)
     pacer_rate_update = Signal(tuple)    # tuple(string, float)
     hrv_target_update = Signal(tuple)    # tuple(string, int)
@@ -27,7 +27,7 @@ class Model(QObject):
         self._current_ibi_phase = -1
         self._last_ibi_phase = -1
         self._last_ibi_extreme = 0
-        self._mac_addresses = []
+        self._addresses = []
         self._breathing_rate = 6.
         self._hrv_mean_window = 15
         self._hrv_target = 200
@@ -200,11 +200,11 @@ class Model(QObject):
         self._last_ibi_extreme = value
 
     @Property(object)
-    def mac_addresses(self):
-        return self._mac_addresses
+    def addresses(self):
+        return self._addresses
 
     @Slot(object)
-    def set_mac_addresses(self, value):
-        mac_addresses = [f"{v.name}, {v.address}" for v in value]
-        self._mac_addresses = mac_addresses
-        self.mac_addresses_update.emit(("SensorMacs", self._mac_addresses))
+    def set_addresses(self, value):
+        addresses = [f"{v.name}, {v.address}" for v in value]
+        self._addresses = addresses
+        self.addresses_update.emit(("SensorAddresses", self._addresses))
