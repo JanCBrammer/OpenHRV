@@ -19,11 +19,11 @@ class Model(QObject):
     def __init__(self):
         super().__init__()
 
-        self._ibis_buffer = np.array([1000] * IBI_BUFFER_SIZE, dtype=int)
+        self._ibis_buffer = np.full(IBI_BUFFER_SIZE, 1000, dtype=int)
         self._ibis_seconds = np.arange(-IBI_BUFFER_SIZE, 0, dtype=float)
-        self._hrv_buffer = np.ones(HRV_BUFFER_SIZE, dtype=int)
-        self._mean_hrv_buffer = np.ones(MEANHRV_BUFFER_SIZE, dtype=int)
+        self._mean_hrv_buffer = np.full(MEANHRV_BUFFER_SIZE, -1, dtype=int)
         self._mean_hrv_seconds = np.arange(-MEANHRV_BUFFER_SIZE, 0, dtype=float)
+        self._hrv_buffer = np.full(HRV_BUFFER_SIZE, -1, dtype=int)
         self._current_ibi_phase = -1
         self._last_ibi_phase = -1
         self._last_ibi_extreme = 0
@@ -41,9 +41,17 @@ class Model(QObject):
     def set_ibis_buffer(self, value):
         self.ibis_seconds = value
         self._ibis_buffer = np.roll(self._ibis_buffer, -1)
-        self._ibis_buffer[-1] = value
+        self._ibis_buffer[-1] = self.validate_ibi(value)
         self.ibis_buffer_update.emit(("InterBeatInterval", self.ibis_buffer))
         self.compute_local_hrv()
+
+    def validate_ibi(self, value):
+        """ Replace IBIs corresponding to instantaneous heart rate of more than
+        220, or less than 30 beats per minute with local median."""
+        if value < 273 or value > 2000:
+            print(f"Correcting invalid IBI: {value}")
+            return np.median(self._ibis_buffer[-11:])
+        return value
 
     def compute_local_hrv(self):
         self._duration_current_phase += self._ibis_buffer[-1]
@@ -56,7 +64,6 @@ class Model(QObject):
         current_ibi_extreme = self._ibis_buffer[-2]
         local_hrv = abs(self._last_ibi_extreme - current_ibi_extreme)
         self.hrv_buffer = local_hrv
-        # potentially enforce constraints on local power here
 
         seconds_current_phase = np.floor(self._duration_current_phase / 1000)
         self.mean_hrv_seconds = seconds_current_phase
@@ -99,6 +106,11 @@ class Model(QObject):
 
     @hrv_buffer.setter
     def hrv_buffer(self, value):
+        if self._hrv_buffer[0] != -1:    # wait until buffer is full
+            threshold = np.amax(self._hrv_buffer) * 4
+            if value > threshold:    # correct hrv values that considerably exceed threshold
+                print(f"Correcting outlier HRV {value} to {threshold}")
+                value = threshold
         self._hrv_buffer = np.roll(self._hrv_buffer, -1)
         self._hrv_buffer[-1] = value
         average_idcs = find_indices_to_average(self._ibis_seconds[-HRV_BUFFER_SIZE:],
