@@ -152,12 +152,8 @@ class View(QMainWindow):
         self.save_recording_button.clicked.connect(self.redis_logger.save_recording)
 
         self.annotation = QComboBox()
-        self.annotation.setEditable(True)
+        self.annotation.setEditable(True)    # user can add custom annotations (edit + enter)
         self.annotation.setDuplicatesEnabled(False)
-        self.annotation.addItems(["start_baseline", "end_baseline",
-                                  "start_bf", "end_bf",
-                                  "start_nobf", "end_nobf"])
-        self.annotation.setMaxCount(10)    # user can configure up to 4 additional custom annotations
         self.annotation_button = QPushButton("Annotate")
         self.annotation_button.clicked.connect(self.emit_annotation)
         self.central_widget = QWidget()
