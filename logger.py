@@ -112,7 +112,7 @@ class RedisLogger(QObject):
         subscribed = False
         try:
             self.subscription.psubscribe(**{"*": self._write_to_file})    # subscribe to all channels by matching everything; instantiates connection to Redis server
-            self.subscription_thread = self.subscription.run_in_thread(sleep_time=0.001)     # Redis connection exceptions are handled with threading.excepthook
+            self.subscription_thread = self.subscription.run_in_thread(sleep_time=0.001)    # Redis connection exceptions are handled with threading.excepthook instead of the "exception_handler" built into "run_in_thread()" since the latter doesn't allow for custom logic during shutdown
             subscribed = True
         except redis.exceptions.ConnectionError as e:
             self.subscription_thread = None
