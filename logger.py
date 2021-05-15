@@ -57,7 +57,7 @@ class RedisLogger(QObject):
 
         threading.excepthook = self._handle_redis_exceptions
 
-    def start_recording(self):
+    def start_recording(self, file_path):
         if self.subscription_thread is not None:
             print(f"Already subscribed to host {REDIS_HOST}, port {REDIS_PORT}.")
             return    # don't re-subscribe
@@ -68,11 +68,7 @@ class RedisLogger(QObject):
         if not subscribed:
             self.status_update.emit(f"Couldn't start recording from host {REDIS_HOST}, port {REDIS_PORT}.")
             return
-        self.file = self._open_file()    # subscription_thread is already running and starts writing to file as soon as the latter is instantiated
-        if self.file is None:    # user cancelled or closed file dialogue
-            self._close_subscription()
-            self.status_update.emit(f"Cancelled recording from host {REDIS_HOST}, port {REDIS_PORT}.")
-            return
+        self.file = open(f"{file_path}.tsv", "a+")    # subscription_thread is already running and starts writing to file as soon as the latter is instantiated
         with threading.Lock():    # prevent subscription_thread from writing to file while writing header
             self.file.write("event\tvalue\ttimestamp\n")    # header
         self.recording_status.emit(0)
@@ -129,15 +125,3 @@ class RedisLogger(QObject):
         timestamp = datetime.now().isoformat()
         self.file.write(f"{key}\t{val}\t{timestamp}\n")
         print(f"Logged: {key}\t{val}\t{timestamp} to {self.file.name}.")
-
-    @staticmethod
-    def _open_file():
-        file = None
-        current_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-        default_file_name = f"sub-?_day-?_task-?_time-{current_time}"    # question marks are invalid characters for file names on Windows and hence force user to specify file name
-        save_path = QFileDialog.getSaveFileName(None, "Create file",
-                                                default_file_name)[0]
-        if not save_path:    # user cancelled or closed file dialog
-            return file
-        file = open(f"{save_path}.tsv", "a+")
-        return file

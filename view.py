@@ -1,10 +1,11 @@
 import pyqtgraph as pg
 import asyncio
 from utils import valid_address
+from datetime import datetime
 from PySide6.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
                                QSlider, QGroupBox, QFormLayout, QCheckBox,
-                               QLineEdit, QProgressBar, QGridLayout)
+                               QFileDialog, QProgressBar, QGridLayout)
 from PySide6.QtCore import Qt, QThread, Signal, QObject
 from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
@@ -17,6 +18,7 @@ class ViewSignals(QObject):
     """Cannot be defined on View directly since Signal needs to be defined on
     object that inherits from QObject"""
     annotation = Signal(tuple)
+    start_recording = Signal(str)
 
 
 class View(QMainWindow):
@@ -59,6 +61,7 @@ class View(QMainWindow):
         self.redis_logger_thread = QThread(self)
         self.redis_logger.moveToThread(self.redis_logger_thread)
         self.redis_logger_thread.finished.connect(self.redis_logger.save_recording)
+        self.signals.start_recording.connect(self.redis_logger.start_recording)
         self.redis_logger.recording_status.connect(self.show_recording_status)
         self.redis_logger.status_update.connect(self.show_status)
 
@@ -145,7 +148,7 @@ class View(QMainWindow):
         self.connect_button.clicked.connect(self.connect_sensor)
 
         self.start_recording_button = QPushButton("Start")
-        self.start_recording_button.clicked.connect(self.redis_logger.start_recording)
+        self.start_recording_button.clicked.connect(self.get_filepath)
 
         self.save_recording_button = QPushButton("Save")
         self.save_recording_button.clicked.connect(self.redis_logger.save_recording)
@@ -235,6 +238,15 @@ class View(QMainWindow):
 
         self.redis_logger_thread.quit()
         self.redis_logger_thread.wait()
+
+    def get_filepath(self):
+        current_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
+        default_file_name = f"sub-?_day-?_task-?_time-{current_time}"    # question marks are invalid characters for file names on Windows and hence force user to specify file name
+        file_path = QFileDialog.getSaveFileName(self, "Create file",
+                                                default_file_name)[0]
+        if not file_path:    # user cancelled or closed file dialog
+            return
+        self.signals.start_recording.emit(file_path)
 
     def connect_sensor(self):
         address = self.address_menu.currentText().split(",")[1].strip()    # discard device name
