@@ -17,7 +17,7 @@ Clone the repository and run [OpenHRV.py](https://github.com/JanCBrammer/OpenHRV
 in a Python environment that contains the following dependencies:
 
 * Python >= 3.8
-* PySide2
+* PySide6
 * pyqtgraph
 * numpy
 * bleak

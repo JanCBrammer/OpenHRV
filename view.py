@@ -1,12 +1,12 @@
 import pyqtgraph as pg
 import asyncio
 from utils import valid_address
-from PySide2.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
+from PySide6.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
                                QSlider, QGroupBox, QFormLayout, QCheckBox,
                                QLineEdit, QProgressBar, QGridLayout)
-from PySide2.QtCore import Qt, QThread, Signal, QObject
-from PySide2.QtGui import QIcon, QLinearGradient, QBrush, QGradient
+from PySide6.QtCore import Qt, QThread, Signal, QObject
+from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
 from logger import RedisPublisher, RedisLogger
 
@@ -26,7 +26,6 @@ class View(QMainWindow):
 
         self.setWindowTitle("OpenHRV")
         self.setWindowIcon(QIcon(":/logo.png"))
-        self.setGeometry(50, 50, 1750, 850)
 
         self.model = model
         self.signals = ViewSignals()

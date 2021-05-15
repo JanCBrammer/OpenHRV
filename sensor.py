@@ -1,5 +1,5 @@
 import asyncio
-from PySide2.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal
 from bleak import BleakClient, BleakScanner
 from bleak.exc import BleakError
 from math import ceil

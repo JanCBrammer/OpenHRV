@@ -1,5 +1,5 @@
 from config import MEANHRV_BUFFER_SIZE, HRV_BUFFER_SIZE, IBI_BUFFER_SIZE
-from PySide2.QtCore import QObject, Signal, Slot, Property
+from PySide6.QtCore import QObject, Signal, Slot, Property
 import numpy as np
 from utils import find_indices_to_average
 

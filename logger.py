@@ -5,8 +5,8 @@ import traceback
 import numpy as np
 from datetime import datetime
 from config import REDIS_HOST, REDIS_PORT
-from PySide2.QtCore import QObject, Signal
-from PySide2.QtWidgets import QFileDialog
+from PySide6.QtCore import QObject, Signal
+from PySide6.QtWidgets import QFileDialog
 
 
 class RedisPublisher(QObject):
