@@ -7,6 +7,9 @@ jobs:
 
   build_windows:
 
+    env:
+      pythonVersion: "3.8"
+
     runs-on: windows-latest
 
     steps:
@@ -16,7 +19,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-          python-version: "3.8"
+          python-version: ${ env.pythonVersion }
 
     - name: Install dependencies
       shell: powershell
@@ -26,9 +29,10 @@ jobs:
 
     - name: build with pyinstaller
       shell: powershell
-      # declare PySide6 as hidden import to fix https://github.com/pyinstaller/pyinstaller/issues/5414
+      # Manually adding the `plugins` directory is a temporary workaround until PyInstaller supports PySide6: https://github.com/pyinstaller/pyinstaller/issues/5414;
+      # `pythonLocation` is set by the `setup-python` action.
       run: |
-        pyinstaller --hidden-import=PySide6 --onefile --icon=logo.ico OpenHRV.py
+        pyinstaller --add-data "$pythonLocation/lib/python$pythonVersion/site-packages/PySide6/plugins;PySide6/plugins/" --onefile --icon=logo.ico OpenHRV.py
 
     - name: upload exe artifact
       uses: actions/upload-artifact@v2
