@@ -26,8 +26,9 @@ jobs:
 
     - name: build with pyinstaller
       shell: powershell
+      # declare PySide6 as hidden import to fix https://github.com/pyinstaller/pyinstaller/issues/5414
       run: |
-        pyinstaller --onefile --icon=logo.ico OpenHRV.py
+        pyinstaller --hidden-import=PySide6 --onefile --icon=logo.ico OpenHRV.py
 
     - name: upload exe artifact
       uses: actions/upload-artifact@v2
