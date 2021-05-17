@@ -32,7 +32,8 @@ jobs:
       # Manually adding the `plugins` directory is a temporary workaround until PyInstaller supports PySide6: https://github.com/pyinstaller/pyinstaller/issues/5414;
       # `pythonLocation` is set by the `setup-python` action.
       run: |
-        pyinstaller --add-data "$pythonLocation/lib/python$pythonVersion/site-packages/PySide6/plugins;PySide6/plugins/" --onefile --icon=logo.ico OpenHRV.py
+        ls $pythonLocation
+        pyinstaller --add-data "$pythonLocation/lib/site-packages/PySide6/plugins;PySide6/plugins/" --onefile --icon=logo.ico OpenHRV.py
 
     - name: upload exe artifact
       uses: actions/upload-artifact@v2
