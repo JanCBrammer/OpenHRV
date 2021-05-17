@@ -19,7 +19,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-          python-version: ${ env.pythonVersion }
+          python-version: ${{ env.pythonVersion }}
 
     - name: Install dependencies
       shell: powershell
