@@ -242,8 +242,9 @@ class View(QMainWindow):
     def get_filepath(self):
         current_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
         default_file_name = f"sub-?_day-?_task-?_time-{current_time}"    # question marks are invalid characters for file names on Windows and hence force user to specify file name
-        file_path = QFileDialog.getSaveFileName(self, "Create file",
-                                                default_file_name)[0]
+        file_path = QFileDialog.getSaveFileName(None, "Create file",
+                                                default_file_name,
+                                                options=QFileDialog.DontUseNativeDialog)[0]    # native file dialog not reliable on Windows (most likely COM issues)
         if not file_path:    # user cancelled or closed file dialog
             return
         self.signals.start_recording.emit(file_path)
