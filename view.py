@@ -33,20 +33,20 @@ class View(QMainWindow):
         self.signals = ViewSignals()
 
         self.scanner = SensorScanner()
-        self.scanner_thread = QThread(self)
+        self.scanner_thread = QThread()
         self.scanner.moveToThread(self.scanner_thread)
         self.scanner.address_update.connect(self.model.set_addresses)
         self.scanner.status_update.connect(self.show_status)
 
         self.sensor = SensorClient()
-        self.sensor_thread = QThread(self)
+        self.sensor_thread = QThread()
         self.sensor.moveToThread(self.sensor_thread)
         self.sensor.ibi_update.connect(self.model.set_ibis_buffer)
         self.sensor.status_update.connect(self.show_status)
         self.sensor_thread.started.connect(self.sensor.run)
 
         self.redis_publisher = RedisPublisher()
-        self.redis_publisher_thread = QThread(self)
+        self.redis_publisher_thread = QThread()
         self.redis_publisher.moveToThread(self.redis_publisher_thread)
         self.model.ibis_buffer_update.connect(self.redis_publisher.publish)
         self.model.mean_hrv_update.connect(self.redis_publisher.publish)
@@ -58,7 +58,7 @@ class View(QMainWindow):
         self.redis_publisher_thread.started.connect(self.redis_publisher.monitor.start)
 
         self.redis_logger = RedisLogger()
-        self.redis_logger_thread = QThread(self)
+        self.redis_logger_thread = QThread()
         self.redis_logger.moveToThread(self.redis_logger_thread)
         self.redis_logger_thread.finished.connect(self.redis_logger.save_recording)
         self.signals.start_recording.connect(self.redis_logger.start_recording)
