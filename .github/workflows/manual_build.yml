@@ -7,9 +7,6 @@ jobs:
 
   build_windows:
 
-    env:
-      pythonVersion: "3.8"
-
     runs-on: windows-latest
 
     steps:
@@ -19,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-          python-version: ${{ env.pythonVersion }}
+          python-version: "3.8"
 
     - name: Install dependencies
       shell: powershell
