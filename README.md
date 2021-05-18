@@ -21,16 +21,16 @@ in a Python environment that contains the following dependencies:
 * pyqtgraph
 * numpy
 * bleak
+* redis-py
 
-You can conveniently install these dependencies in a
-[conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file)
-using the environment.yml [file](https://github.com/JanCBrammer/OpenHRV/blob/main/environment.yml).
-
+It is highly recommended to install these dependencies in a virtual environment,
+e.g., using [conda](https://docs.python.org/3/library/venv.html) or 
+[venv](https://docs.python.org/3/library/venv.html).
 
 ## User Guide
 
 ### Connect your ECG sensor
-Search your Polar sensor (H7, H9, or H10) by clicking `Scan`. The addresses
+Search your Polar sensor (H9, or H10) by clicking `Scan`. The addresses
 of all detected Polar sensors show up in the drop-down menu. Select your sensor
 from the drop-down menu and click `Connect` in order to establish a connection.
 You can connect to another sensor anytime.
@@ -51,7 +51,7 @@ disk shrinks and breathe in as it gets larger. Explore how different breathing r
 affect your HRV by adjusting the `Rate` slider anytime during a session. Everyone
 has a personal breathing rate at which their HRV is at its highest. Usually that
 rate is somewhere between 4 and 7 breaths per minute. You can also hide the pacer
-by unchecking the `Show pacer` box if you want to practice regulating HRV on your own.
+by unchecking the `Show pacer` box if you want to practice regulating HRV without pacing.
 
 ![adjust_breathing_pacer](adjust_breathing_pacer.gif)
 
