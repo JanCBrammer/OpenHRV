@@ -1,6 +1,6 @@
 import pyqtgraph as pg
 import asyncio
-from utils import valid_address
+from utils import valid_address, valid_path
 from datetime import datetime
 from PySide6.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
@@ -246,6 +246,9 @@ class View(QMainWindow):
                                                 default_file_name,
                                                 options=QFileDialog.DontUseNativeDialog)[0]    # native file dialog not reliable on Windows (most likely COM issues)
         if not file_path:    # user cancelled or closed file dialog
+            return
+        if not valid_path(file_path):
+            self.show_status("File path is invalid or exists already.")
             return
         self.signals.start_recording.emit(file_path)
 

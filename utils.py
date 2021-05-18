@@ -16,6 +16,18 @@ def valid_address(address):
 
     return valid
 
+def valid_path(path):
+    """Make sure that path is valid by OS standards and that a file doesn't
+    exist on that path already. No builtin solution for this atm."""
+    valid = False
+
+    try:
+        with open(path, "x") as tempfile:
+            valid = True
+    except OSError:    # file exists or is invalid
+        pass
+
+    return valid
 
 def find_indices_to_average(seconds, mean_window):
     """Identify which elements need to be averaged.
