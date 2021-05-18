@@ -241,7 +241,7 @@ class View(QMainWindow):
 
     def get_filepath(self):
         current_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-        default_file_name = f"sub-?_day-?_task-?_time-{current_time}"    # question marks are invalid characters for file names on Windows and hence force user to specify file name
+        default_file_name = f"sub-?_day-?_task-?_time-{current_time}.tsv"    # question marks are invalid characters for file names on Windows and hence force user to specify file name
         file_path = QFileDialog.getSaveFileName(None, "Create file",
                                                 default_file_name,
                                                 options=QFileDialog.DontUseNativeDialog)[0]    # native file dialog not reliable on Windows (most likely COM issues)

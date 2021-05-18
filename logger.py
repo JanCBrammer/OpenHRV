@@ -68,7 +68,7 @@ class RedisLogger(QObject):
         if not subscribed:
             self.status_update.emit(f"Couldn't start recording from host {REDIS_HOST}, port {REDIS_PORT}.")
             return
-        self.file = open(f"{file_path}.tsv", "a+")    # subscription_thread is already running and starts writing to file as soon as the latter is instantiated
+        self.file = open(file_path, "a+")    # subscription_thread is already running and starts writing to file as soon as the latter is instantiated
         with threading.Lock():    # prevent subscription_thread from writing to file while writing header
             self.file.write("event\tvalue\ttimestamp\n")    # header
         self.recording_status.emit(0)
