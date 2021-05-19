@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 import platform
 
 
@@ -20,11 +21,13 @@ def valid_path(path):
     """Make sure that path is valid by OS standards and that a file doesn't
     exist on that path already. No builtin solution for this atm."""
     valid = False
+    test_path = Path(path)
 
     try:
-        with open(path, "x") as tempfile:
-            valid = True
-    except OSError:    # file exists or is invalid
+        test_path.touch(exist_ok=False)    # create file
+        test_path.unlink()    # remove file (only called if file doesn't exist)
+        valid = True
+    except OSError:    # path exists or is invalid
         pass
 
     return valid
