@@ -257,6 +257,8 @@ class View(QMainWindow):
         self.signals.start_recording.emit(file_path)
 
     def connect_sensor(self):
+        if not self.address_menu.currentText():
+            return
         address = self.address_menu.currentText().split(",")[1].strip()    # discard device name
         if not valid_address(address):
             print(f"Invalid sensor address: {address}.")
