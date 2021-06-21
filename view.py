@@ -147,6 +147,9 @@ class View(QMainWindow):
         self.connect_button = QPushButton("Connect")
         self.connect_button.clicked.connect(self.connect_sensor)
 
+        self.disconnect_button = QPushButton("Disconnect")
+        self.disconnect_button.clicked.connect(self.disconnect_sensor)
+
         self.start_recording_button = QPushButton("Start")
         self.start_recording_button.clicked.connect(self.get_filepath)
 
@@ -178,9 +181,11 @@ class View(QMainWindow):
 
         self.hlayout1 = QHBoxLayout()
 
-        self.device_config = QFormLayout()
-        self.device_config.addRow(self.scan_button, self.address_menu)
-        self.device_config.addRow(self.connect_button)
+        self.device_config = QGridLayout()
+        self.device_config.addWidget(self.scan_button, 0, 0)
+        self.device_config.addWidget(self.address_menu, 0, 1)
+        self.device_config.addWidget(self.connect_button, 1, 0)
+        self.device_config.addWidget(self.disconnect_button, 1, 1)
         self.device_panel = QGroupBox("ECG Devices")
         self.device_panel.setLayout(self.device_config)
         self.hlayout1.addWidget(self.device_panel, stretch=25)
@@ -204,7 +209,6 @@ class View(QMainWindow):
         self.recording_config.addWidget(self.recording_statusbar, 0, 2)
         self.recording_config.addWidget(self.annotation, 1, 0, 1, 2)    # row, column, rowspan, columnspan
         self.recording_config.addWidget(self.annotation_button, 1, 2)
-
         self.recording_panel = QGroupBox("Recording")
         self.recording_panel.setLayout(self.recording_config)
         self.hlayout1.addWidget(self.recording_panel, stretch=25)
@@ -230,7 +234,7 @@ class View(QMainWindow):
         self.scanner_thread.wait()
 
         self.sensor_thread.quit()    # since quit() only works if the thread has a running event loop...
-        asyncio.run_coroutine_threadsafe(self.sensor.stop(), self.sensor.loop)    # ...the event loop must only be stopped AFTER quit() has been called!
+        self.sensor.loop.call_soon_threadsafe(self.sensor.stop)    # ...the event loop must only be stopped AFTER quit() has been called!
         self.sensor_thread.wait()
 
         self.redis_publisher_thread.quit()
@@ -259,6 +263,9 @@ class View(QMainWindow):
             return
         asyncio.run_coroutine_threadsafe(self.sensor.connect_client(address),
                                          self.sensor.loop)
+
+    def disconnect_sensor(self):
+        self.sensor.loop.call_soon_threadsafe(self.sensor.disconnect_client)
 
     def plot_ibis(self, ibis):
         self.ibis_signal.setData(self.model.ibis_seconds, ibis[1])
