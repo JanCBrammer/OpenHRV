@@ -103,27 +103,52 @@ class SensorClient(QObject):
 
     def _data_handler(self, caller, data):    # caller (UUID) unused but mandatory positional argument
         """
-        IMPORTANT: Polar H10 (H9) records IBIs in 1/1024 seconds format, i.e.
-        not milliseconds!
+        `data` is formatted according to the
+        "GATT Characteristic and Object Type 0x2A37 Heart Rate Measurement"
+        which is one of the three characteristics included in the
+        "GATT Service 0x180D Heart Rate".
 
-        data has up to 6 bytes:
-        byte 1: flags
-            Bit 4 = IBI(s) present
-        byte 2: HR
-        byte 3 and 4: IBI1
-        byte 5 and 6: IBI2 (if present)
-        byte 7 and 8: IBI3 (if present)
-        etc.
-        Polar H7/H10 Heart Rate Characteristics
-        (UUID: 00002a37-0000-1000-8000-00805f9b34fb):
-            + Energy expenditure is not transmitted
-            + HR only transmitted as uint8, no need to check if HR is
-              transmitted as uint8 or uint16 (necessary for bpm > 255)
-        Acceleration and raw ECG available via Polar SDK
+        `data` can include the following bytes:
+        - flags
+            Always present.
+            - bit 0: HR format (uint8 vs. uint16)
+            - bit 1, 2: sensor contact status
+            - bit 3: energy expenditure status
+            - bit 4: RR interval status
+        - HR
+            Encoded by one or two bytes depending on flags/bit0. One byte is
+            always present (uint8). Two bytes (uint16) are necessary to
+            represent HR > 255.
+        - energy expenditure
+            Encoded by 2 bytes. Only present if flags/bit3.
+        - inter-beat-intervals (IBIs)
+            One IBI is encoded by 2 consecutive bytes. Up to 18 bytes depending
+            on presence of uint16 HR format and energy expenditure.
         """
-        bytes = list(data)
-        if bytes[0] & 2**4:
-            for i in range(2, len(bytes), 2):
-                ibi = data[i] + 256 * data[i + 1]
-                ibi = ceil(ibi / 1024 * 1000)    # convert 1/1024 sec format to milliseconds
-                self.ibi_update.emit(ibi)
+        byte0 = data[0]
+        uint8_format = (byte0 & 1) == 0
+        energy_expenditure = ((byte0 >> 3) & 1) == 1
+        rr_interval = ((byte0 >> 4) & 1) == 1
+
+        if not rr_interval:
+            return
+
+        first_rr_byte = 2
+        if uint8_format:
+            # hr = data[1]
+            pass
+        else:
+            # hr = (data[2] << 8) | data[1] # uint16
+            first_rr_byte += 1
+        if energy_expenditure:
+            # ee = (data[first_rr_byte + 1] << 8) | data[first_rr_byte]
+            first_rr_byte += 2
+
+        for i in range(first_rr_byte, len(data), 2):
+            ibi = (data[i + 1] << 8) | data[i]
+            # Polar H7, H9, and H10 record IBIs in 1/1024 seconds format.
+            # Convert 1/1024 sec format to milliseconds.
+            # TODO: move conversion to model and only convert if sensor doesn't
+            # transmit data in miliseconds.
+            ibi = ceil(ibi / 1024 * 1000)
+            self.ibi_update.emit(ibi)
