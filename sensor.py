@@ -108,14 +108,13 @@ class SensorClient(QObject):
 
         data has up to 6 bytes:
         byte 1: flags
-            00 = only HR
-            16 = HR and IBI(s)
+            Bit 4 = IBI(s) present
         byte 2: HR
         byte 3 and 4: IBI1
         byte 5 and 6: IBI2 (if present)
         byte 7 and 8: IBI3 (if present)
         etc.
-        Polar H10 Heart Rate Characteristics
+        Polar H7/H10 Heart Rate Characteristics
         (UUID: 00002a37-0000-1000-8000-00805f9b34fb):
             + Energy expenditure is not transmitted
             + HR only transmitted as uint8, no need to check if HR is
@@ -123,7 +122,7 @@ class SensorClient(QObject):
         Acceleration and raw ECG available via Polar SDK
         """
         bytes = list(data)
-        if bytes[0] == 16:
+        if bytes[0] & 2**4:
             for i in range(2, len(bytes), 2):
                 ibi = data[i] + 256 * data[i + 1]
                 ibi = ceil(ibi / 1024 * 1000)    # convert 1/1024 sec format to milliseconds
