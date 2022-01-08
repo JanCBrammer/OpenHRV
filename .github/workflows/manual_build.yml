@@ -1,7 +1,7 @@
 name: manual build
 
 on:
-  workflow_dispatch    # manually triggered workflow
+  workflow_dispatch
 
 jobs:
 
@@ -16,7 +16,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-          python-version: "3.8"
+          python-version: "3.10"
 
     - name: Install dependencies
       shell: powershell
@@ -26,11 +26,8 @@ jobs:
 
     - name: build with pyinstaller
       shell: powershell
-      # Manually adding the `plugins` directory is a temporary workaround until PyInstaller supports PySide6: https://github.com/pyinstaller/pyinstaller/issues/5414;
-      # `pythonLocation` is set by the `setup-python` action.
       run: |
-        ls $Env:pythonLocation
-        pyinstaller --add-data "$Env:pythonLocation/lib/site-packages/PySide6/plugins;PySide6/plugins/" --onefile --icon=logo.ico OpenHRV.py
+        pyinstaller --onefile --icon=logo.ico OpenHRV.py
 
     - name: upload exe artifact
       uses: actions/upload-artifact@v2
