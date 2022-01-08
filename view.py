@@ -9,7 +9,7 @@ from PySide6.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
 from PySide6.QtCore import Qt, QThread, Signal, QObject
 from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
-from logger import RedisPublisher, RedisLogger
+from logger import Logger
 
 import resources    # noqa
 
@@ -45,25 +45,19 @@ class View(QMainWindow):
         self.sensor.status_update.connect(self.show_status)
         self.sensor_thread.started.connect(self.sensor.run)
 
-        self.redis_publisher = RedisPublisher()
-        self.redis_publisher_thread = QThread()
-        self.redis_publisher.moveToThread(self.redis_publisher_thread)
-        self.model.ibis_buffer_update.connect(self.redis_publisher.publish)
-        self.model.mean_hrv_update.connect(self.redis_publisher.publish)
-        self.model.addresses_update.connect(self.redis_publisher.publish)
-        self.model.pacer_rate_update.connect(self.redis_publisher.publish)
-        self.model.hrv_target_update.connect(self.redis_publisher.publish)
-        self.model.biofeedback_update.connect(self.redis_publisher.publish)
-        self.signals.annotation.connect(self.redis_publisher.publish)
-        self.redis_publisher_thread.started.connect(self.redis_publisher.monitor.start)
-
-        self.redis_logger = RedisLogger()
-        self.redis_logger_thread = QThread()
-        self.redis_logger.moveToThread(self.redis_logger_thread)
-        self.redis_logger_thread.finished.connect(self.redis_logger.save_recording)
-        self.signals.start_recording.connect(self.redis_logger.start_recording)
-        self.redis_logger.recording_status.connect(self.show_recording_status)
-        self.redis_logger.status_update.connect(self.show_status)
+        self.logger = Logger()
+        self.logger_thread = QThread()
+        self.logger.moveToThread(self.logger_thread)
+        self.model.ibis_buffer_update.connect(self.logger.write_to_file)
+        self.model.addresses_update.connect(self.logger.write_to_file)
+        self.model.pacer_rate_update.connect(self.logger.write_to_file)
+        self.model.hrv_target_update.connect(self.logger.write_to_file)
+        self.model.biofeedback_update.connect(self.logger.write_to_file)
+        self.signals.annotation.connect(self.logger.write_to_file)
+        self.logger_thread.finished.connect(self.logger.save_recording)
+        self.signals.start_recording.connect(self.logger.start_recording)
+        self.logger.recording_status.connect(self.show_recording_status)
+        self.logger.status_update.connect(self.show_status)
 
         self.ibis_plot = pg.PlotWidget()
         self.ibis_plot.setBackground("w")
@@ -154,7 +148,7 @@ class View(QMainWindow):
         self.start_recording_button.clicked.connect(self.get_filepath)
 
         self.save_recording_button = QPushButton("Save")
-        self.save_recording_button.clicked.connect(self.redis_logger.save_recording)
+        self.save_recording_button.clicked.connect(self.logger.save_recording)
 
         self.annotation = QComboBox()
         self.annotation.setEditable(True)    # user can add custom annotations (edit + enter)
@@ -224,8 +218,7 @@ class View(QMainWindow):
 
         self.scanner_thread.start()
         self.sensor_thread.start()
-        self.redis_publisher_thread.start()
-        self.redis_logger_thread.start()
+        self.logger_thread.start()
 
     def closeEvent(self, event):
         """Properly shut down all threads."""
@@ -237,15 +230,12 @@ class View(QMainWindow):
         self.sensor.loop.call_soon_threadsafe(self.sensor.stop)    # ...the event loop must only be stopped AFTER quit() has been called!
         self.sensor_thread.wait()
 
-        self.redis_publisher_thread.quit()
-        self.redis_publisher_thread.wait()
-
-        self.redis_logger_thread.quit()
-        self.redis_logger_thread.wait()
+        self.logger_thread.quit()
+        self.logger_thread.wait()
 
     def get_filepath(self):
-        current_time = datetime.now().strftime("%Y.%m.%d.%H.%M.%S")
-        default_file_name = f"sub-?_day-?_task-?_time-{current_time}.tsv"    # question marks are invalid characters for file names on Windows and hence force user to specify file name
+        current_time = datetime.now().strftime("%Y-%m-%d-%H-%M")
+        default_file_name = f"OpenHRV_{current_time}.csv"
         file_path = QFileDialog.getSaveFileName(None, "Create file",
                                                 default_file_name,
                                                 options=QFileDialog.DontUseNativeDialog)[0]    # native file dialog not reliable on Windows (most likely COM issues)
@@ -303,4 +293,4 @@ class View(QMainWindow):
         self.statusbar.showMessage(status, 0)
 
     def emit_annotation(self):
-        self.signals.annotation.emit(("eventmarker", self.annotation.currentText()))
+        self.signals.annotation.emit(("Annotation", self.annotation.currentText()))

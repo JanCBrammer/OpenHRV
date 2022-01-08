@@ -21,7 +21,6 @@ in a Python environment that contains the following dependencies:
 * pyqtgraph
 * numpy
 * bleak
-* redis-py
 
 It is highly recommended to install these dependencies in a virtual environment,
 e.g., using [conda](https://docs.python.org/3/library/venv.html) or 

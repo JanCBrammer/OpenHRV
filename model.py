@@ -6,8 +6,7 @@ from utils import find_indices_to_average
 
 class Model(QObject):
 
-    # Signals are tuples, with as first element the Redis channel name, and
-    # value as second element.
+    # Signal format is (name, value).
     ibis_buffer_update = Signal(tuple)    # tuple(string, np.ndarray)
     mean_hrv_update = Signal(tuple)    # tuple(string, np.ndarray)
     addresses_update = Signal(tuple)    # tuple(string, list)
@@ -98,7 +97,7 @@ class Model(QObject):
         n = 3    # Hill coefficient, determines steepness of curve
         y = Vmax * x**n / (K**n + x**n)
 
-        self.biofeedback_update.emit(("Feedback", y))
+        self.biofeedback_update.emit(("Biofeedback", y))
 
     @property
     def hrv_buffer(self):
