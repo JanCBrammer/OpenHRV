@@ -1,6 +1,7 @@
 import asyncio
 from PySide6.QtCore import QObject, Signal
-from bleak import BleakClient, BleakScanner
+from PySide6.QtBluetooth import QBluetoothDeviceDiscoveryAgent
+from bleak import BleakClient
 from math import ceil
 from config import HR_UUID
 
@@ -12,20 +13,29 @@ class SensorScanner(QObject):
 
     def __init__(self):
         super().__init__()
-        self.scanner = BleakScanner()
-
-    async def _scan(self):
-        devices = await self.scanner.discover()
-        polar_devices = [d for d in devices if "Polar" in str(d.name)]
-        if not polar_devices:
-            self.status_update.emit("Couldn't find sensors.")
-            return
-        self.address_update.emit(polar_devices)
-        self.status_update.emit(f"Found {len(polar_devices)} sensor(s).")
+        self.scanner = QBluetoothDeviceDiscoveryAgent()
+        self.scanner.finished.connect(self._handle_scan_result)
+        self.scanner.errorOccurred.connect(self._handle_scan_error)
 
     def scan(self):
+        if self.scanner.isActive():
+            self.status_update.emit("Already searching for sensors...")
+            return
         self.status_update.emit("Searching for sensors...")
-        asyncio.run(self._scan())
+        self.scanner.start()
+
+    def _handle_scan_result(self):
+        polar_sensors = [d for d in self.scanner.discoveredDevices()
+                         if "Polar" in str(d.name()) and d.rssi() < 0]    # TODO: comment why rssi needs to be negative
+        polar_sensors = [f"{s.name()}, {s.address().toString()}" for s in polar_sensors]
+        if not polar_sensors:
+            self.status_update.emit("Couldn't find sensors.")
+            return
+        self.address_update.emit(polar_sensors)
+        self.status_update.emit(f"Found {len(polar_sensors)} sensor(s).")
+
+    def _handle_scan_error(self, error):
+        print(error)
 
 
 class SensorClient(QObject):

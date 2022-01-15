@@ -33,8 +33,6 @@ class View(QMainWindow):
         self.signals = ViewSignals()
 
         self.scanner = SensorScanner()
-        self.scanner_thread = QThread()
-        self.scanner.moveToThread(self.scanner_thread)
         self.scanner.address_update.connect(self.model.set_addresses)
         self.scanner.status_update.connect(self.show_status)
 
@@ -216,15 +214,12 @@ class View(QMainWindow):
         self.model.pacer_rate_update.connect(self.update_pacer_label)
         self.model.hrv_target_update.connect(self.update_hrv_target)
 
-        self.scanner_thread.start()
         self.sensor_thread.start()
         self.logger_thread.start()
 
     def closeEvent(self, event):
         """Properly shut down all threads."""
         print("Closing threads...")
-        self.scanner_thread.quit()
-        self.scanner_thread.wait()
 
         self.sensor_thread.quit()    # since quit() only works if the thread has a running event loop...
         self.sensor.loop.call_soon_threadsafe(self.sensor.stop)    # ...the event loop must only be stopped AFTER quit() has been called!
