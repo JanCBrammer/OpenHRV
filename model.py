@@ -203,7 +203,6 @@ class Model(QObject):
         return self._addresses
 
     @Slot(object)
-    def set_addresses(self, value):
-        addresses = [f"{v.name}, {v.address}" for v in value]
+    def set_addresses(self, addresses):
         self._addresses = addresses
         self.addresses_update.emit(("SensorAddresses", self._addresses))
