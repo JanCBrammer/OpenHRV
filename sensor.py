@@ -1,14 +1,15 @@
-import asyncio
-from PySide6.QtCore import QObject, Signal
-from PySide6.QtBluetooth import QBluetoothDeviceDiscoveryAgent
-from bleak import BleakClient
+from PySide6.QtCore import QObject, Signal, QByteArray
+from PySide6.QtBluetooth import (QBluetoothDeviceDiscoveryAgent,
+                                 QLowEnergyController, QLowEnergyService,
+                                 QBluetoothUuid)
 from math import ceil
-from config import HR_UUID
+HR_SERVICE = QBluetoothUuid.ServiceClassUuid.HeartRate
+HR_CHARACTERISTIC = QBluetoothUuid.CharacteristicType.HeartRateMeasurement
 
 
 class SensorScanner(QObject):
 
-    address_update = Signal(object)
+    sensor_update = Signal(object)
     status_update = Signal(str)
 
     def __init__(self):
@@ -27,11 +28,10 @@ class SensorScanner(QObject):
     def _handle_scan_result(self):
         polar_sensors = [d for d in self.scanner.discoveredDevices()
                          if "Polar" in str(d.name()) and d.rssi() < 0]    # TODO: comment why rssi needs to be negative
-        polar_sensors = [f"{s.name()}, {s.address().toString()}" for s in polar_sensors]
         if not polar_sensors:
             self.status_update.emit("Couldn't find sensors.")
             return
-        self.address_update.emit(polar_sensors)
+        self.sensor_update.emit(polar_sensors)
         self.status_update.emit(f"Found {len(polar_sensors)} sensor(s).")
 
     def _handle_scan_error(self, error):
@@ -39,79 +39,68 @@ class SensorScanner(QObject):
 
 
 class SensorClient(QObject):
-    """(Re-) connect a BLE client to a server at address.
-
-    Notes
-    -----
-    unexpected disconnection:
-    - sensor lost skin contact
-    - sensor out of range
-
-    user disconnection:
-    - user clicks disconnection button
-
-    `await x` means "do `x` and wait for it to return". In the meantime,
-    if `x` chooses to suspend execution, other tasks which have already
-    started elsewhere may run. Also see [1] and [2].
-
-    References
-    ----------
-    [1] https://hynek.me/articles/waiting-in-asyncio/
-    [2] https://bbc.github.io/cloudfit-public-docs/
     """
+    Connect to a Polar sensor that acts as a Bluetooth server / peripheral.
+    On Windows, the sensor must already be paired with the machine running
+    OpenHRV. Pairing isn't implemented in Qt6.
 
+    In Qt terminology client=central, server=peripheral.
+    """
     ibi_update = Signal(object)
     status_update = Signal(str)
 
     def __init__(self):
         super().__init__()
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
-        self.disconnection_request = asyncio.Event()
-        self.client_lock = asyncio.Lock()
+        self.client = None
+        self.hr_service = None
 
-    def run(self):
-        """Start the (empty) asyncio event loop."""
-        self.loop.run_forever()
-
-    def stop(self):
-        """Shut down client and asyncio event loop before app is closed."""
-        self.disconnect_client()
-        self.loop.stop()
-
-    def disconnect_client(self):    # regular subroutines are called from main (GUI) thread with `call_soon_threadsafe`
-        """Disconnect from current BLE server."""
-        if not self.client_lock.locked():    # early return if no sensor is connected
-            print("Currently there is no sensor connected.")
+    def connect_client(self, sensor):
+        if self.client:
+            print(self.client.state())
             return
-        print("Disconnecting from current sensor.")
-        self.disconnection_request.set()
-        self.disconnection_request.clear()
+        self.client = QLowEnergyController.createCentral(sensor)
+        self.client.connected.connect(self._discover_services)
+        self.client.disconnected.connect(self._reset_client)
+        self.client.connectToDevice()
 
-    async def connect_client(self, address):    # async methods are called from the main (GUI) thread with `run_coroutine_threadsafe`
-        """Connect to BLE server at address."""
-        if self.client_lock.locked():    # don't allow new connection while current client is (dis-)connecting or connected
-            print("Please disconnect the current sensor and then try to connect again.")
+    def disconnect_client(self):
+        print(f"Disconnecting from sensor at {self.client.remoteAddress()}")
+        self.client.disconnectFromDevice()
+
+    def _discover_services(self):
+        self.client.discoveryFinished.connect(self._connect_hr_service)
+        self.client.discoverServices()
+
+    def _connect_hr_service(self):
+        hr_service = [s for s in self.client.services() if s == HR_SERVICE]
+        if not hr_service:
+            print(f"Couldn't find HR service on {self.client.remoteAddress()}.")
             return
-        async with self.client_lock:    # client_lock context exits and releases lock once client is disconnected, either through regular disconnection or failed connection attempt
-            print(f"Trying to connect to sensor at {address}...")
-            async with BleakClient(address, disconnected_callback=self._reconnect_client) as client:    # __aenter__() calls client.connect() and raises if connection attempt fails
-                try:
-                    await client.start_notify(HR_UUID, self._data_handler)
-                    print(f"Connected to sensor at {client.address}.")
-                    await self.disconnection_request.wait()    # block until `disconnection_request` is set
-                    client.set_disconnected_callback(None)
-                except Exception as e:
-                    print(e)
+        self.hr_service = self.client.createServiceObject(*hr_service)
+        if not self.hr_service:
+            print(f"Couldn't establish connection to HR service on {self.client.remoteAddress()}.")
+            return
+        self.hr_service.stateChanged.connect(self._start_hr_notification)
+        self.hr_service.discoverDetails()
 
-        print(f"Disconnected from sensor at {address}.")
+    def _start_hr_notification(self, state):
+        if state != QLowEnergyService.RemoteServiceDiscovered:
+            return
+        hr_char = self.hr_service.characteristic(HR_CHARACTERISTIC)
+        if not hr_char.isValid():
+            print("No HR characterictic found.")
+        hr_notification = hr_char.descriptor(QBluetoothUuid.DescriptorType.ClientCharacteristicConfiguration)
+        if not hr_notification.isValid():
+            print("HR characteristic is invalid.")
+        self.hr_service.characteristicChanged.connect(self._data_handler)
+        self.hr_service.writeDescriptor(hr_notification, QByteArray(b'\x01\x00'))
 
-    def _reconnect_client(self, client):
-        """Handle unexpected disconnection."""
-        print(f"Lost connection to sensor at {client.address}")
-        self.loop.call_soon(self.disconnect_client)
+    def _reset_client(self):
+        print(f"Discarding sensor at {self.client.remoteAddress()}")
+        self.client = None
+        self.hr_service = None
 
-    def _data_handler(self, caller, data):    # caller (UUID) unused but mandatory positional argument
+    def _data_handler(self, characteristic, data):    # characteristic is unused but mandatory argument
         """
         `data` is formatted according to the
         "GATT Characteristic and Object Type 0x2A37 Heart Rate Measurement"
@@ -135,6 +124,8 @@ class SensorClient(QObject):
             One IBI is encoded by 2 consecutive bytes. Up to 18 bytes depending
             on presence of uint16 HR format and energy expenditure.
         """
+        data = data.data()    # convert from QByteArray to Python bytes
+
         byte0 = data[0]
         uint8_format = (byte0 & 1) == 0
         energy_expenditure = ((byte0 >> 3) & 1) == 1

@@ -1,5 +1,4 @@
 import pyqtgraph as pg
-import asyncio
 from utils import valid_address, valid_path
 from datetime import datetime
 from PySide6.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
@@ -33,15 +32,12 @@ class View(QMainWindow):
         self.signals = ViewSignals()
 
         self.scanner = SensorScanner()
-        self.scanner.address_update.connect(self.model.set_addresses)
+        self.scanner.sensor_update.connect(self.model.set_sensors)
         self.scanner.status_update.connect(self.show_status)
 
         self.sensor = SensorClient()
-        self.sensor_thread = QThread()
-        self.sensor.moveToThread(self.sensor_thread)
         self.sensor.ibi_update.connect(self.model.set_ibis_buffer)
         self.sensor.status_update.connect(self.show_status)
-        self.sensor_thread.started.connect(self.sensor.run)
 
         self.logger = Logger()
         self.logger_thread = QThread()
@@ -214,16 +210,13 @@ class View(QMainWindow):
         self.model.pacer_rate_update.connect(self.update_pacer_label)
         self.model.hrv_target_update.connect(self.update_hrv_target)
 
-        self.sensor_thread.start()
         self.logger_thread.start()
 
     def closeEvent(self, event):
         """Properly shut down all threads."""
         print("Closing threads...")
 
-        self.sensor_thread.quit()    # since quit() only works if the thread has a running event loop...
-        self.sensor.loop.call_soon_threadsafe(self.sensor.stop)    # ...the event loop must only be stopped AFTER quit() has been called!
-        self.sensor_thread.wait()
+        self.sensor.disconnect_client()
 
         self.logger_thread.quit()
         self.logger_thread.wait()
@@ -248,11 +241,11 @@ class View(QMainWindow):
         if not valid_address(address):
             print(f"Invalid sensor address: {address}.")
             return
-        asyncio.run_coroutine_threadsafe(self.sensor.connect_client(address),
-                                         self.sensor.loop)
+        sensor = [s for s in self.model.sensors if s.address().toString() == address]
+        self.sensor.connect_client(*sensor)
 
     def disconnect_sensor(self):
-        self.sensor.loop.call_soon_threadsafe(self.sensor.disconnect_client)
+        self.sensor.disconnect_client()
 
     def plot_ibis(self, ibis):
         self.ibis_signal.setData(self.model.ibis_seconds, ibis[1])

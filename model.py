@@ -26,7 +26,7 @@ class Model(QObject):
         self._current_ibi_phase = -1
         self._last_ibi_phase = -1
         self._last_ibi_extreme = 0
-        self._addresses = []
+        self._sensors = []
         self._breathing_rate = 6.
         self._hrv_mean_window = 15
         self._hrv_target = 200
@@ -199,10 +199,12 @@ class Model(QObject):
         self._last_ibi_extreme = value
 
     @Property(object)
-    def addresses(self):
-        return self._addresses
+    def sensors(self):
+        return self._sensors
 
     @Slot(object)
-    def set_addresses(self, addresses):
-        self._addresses = addresses
-        self.addresses_update.emit(("SensorAddresses", self._addresses))
+    def set_sensors(self, sensors):
+        self._sensors = sensors
+        self.addresses_update.emit(("Sensors",
+                                    [f"{s.name()}, {s.address().toString()}"
+                                     for s in sensors]))
