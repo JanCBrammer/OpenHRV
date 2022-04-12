@@ -59,12 +59,11 @@ class SensorClient(QObject):
 
     def connect_client(self, sensor):
         if self.client:
-            print(f"Currently connected to sensor at {self.client.remoteAddress()}.")
-            print("Please disconnect before (re-)connecting to (another) sensor.")
-            print(self.client.state())
+            msg = f"""Currently connected to sensor at {self.client.remoteAddress()}.
+            Please disconnect before (re-)connecting to (another) sensor."""
+            self.status_update.emit(msg)
             return
-        # self.status_update.emit(f"Connecting to sensor at {sensor.address().toString()}")
-        print(f"Connecting to sensor at {sensor.address().toString()}.")
+        self.status_update.emit(f"Connecting to sensor at {sensor.address().toString()}")
         self.client = QLowEnergyController.createCentral(sensor)
         self.client.errorOccurred.connect(self._catch_error)
         self.client.connected.connect(self._discover_services)
@@ -79,7 +78,7 @@ class SensorClient(QObject):
             print("Unsubscribing from HR service.")
             self.hr_service.writeDescriptor(self.hr_notification, self.DISABLE_NOTIFICATION)
         if self.client:
-            print(f"Disconnecting from sensor at {self.client.remoteAddress()}")
+            self.status_update.emit(f"Disconnecting from sensor at {self.client.remoteAddress()}")
             self.client.disconnectFromDevice()
 
     def _discover_services(self):
@@ -103,7 +102,7 @@ class SensorClient(QObject):
             return
         hr_char = self.hr_service.characteristic(self.HR_CHARACTERISTIC)
         if not hr_char.isValid():
-            print("No HR characterictic found.")
+            print(f"Couldn't find HR characterictic on {self.client.remoteAddress()}.")
         self.hr_notification = hr_char.descriptor(QBluetoothUuid.DescriptorType.ClientCharacteristicConfiguration)
         if not self.hr_notification.isValid():
             print("HR characteristic is invalid.")
@@ -133,7 +132,7 @@ class SensorClient(QObject):
             self.client = None
 
     def _catch_error(self, error):
-        print(f"An error occurred: {error}")
+        self.status_update.emit(f"An error occurred: {error}. Disconnecting sensor.")
         self._reset_connection()
 
     def _data_handler(self, characteristic, data):    # characteristic is unused but mandatory argument
