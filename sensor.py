@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, Signal, QByteArray
+from PySide6.QtCore import QObject, Signal, QByteArray, Qt
 from PySide6.QtBluetooth import (QBluetoothDeviceDiscoveryAgent,
                                  QLowEnergyController, QLowEnergyService,
                                  QBluetoothUuid)
@@ -67,7 +67,7 @@ class SensorClient(QObject):
         self.client = QLowEnergyController.createCentral(sensor)
         self.client.errorOccurred.connect(self._catch_error)
         self.client.connected.connect(self._discover_services)
-        self.client.discoveryFinished.connect(self._connect_hr_service)
+        self.client.discoveryFinished.connect(self._connect_hr_service, Qt.QueuedConnection)
         self.client.disconnected.connect(self._reset_connection)
         self.client.connectToDevice()
 
