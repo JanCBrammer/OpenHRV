@@ -18,9 +18,9 @@ class SensorScanner(QObject):
 
     def scan(self):
         if self.scanner.isActive():
-            self.status_update.emit("Already searching for sensors...")
+            self.status_update.emit("Already searching for sensors.")
             return
-        self.status_update.emit("Searching for sensors...")
+        self.status_update.emit("Searching for sensors (this might take a while).")
         self.scanner.start()
 
     def _handle_scan_result(self):
@@ -57,13 +57,16 @@ class SensorClient(QObject):
         self.HR_SERVICE = QBluetoothUuid.ServiceClassUuid.HeartRate
         self.HR_CHARACTERISTIC = QBluetoothUuid.CharacteristicType.HeartRateMeasurement
 
+    def _sensor_address(self):
+        return self.client.remoteAddress().toString()
+
     def connect_client(self, sensor):
         if self.client:
-            msg = f"""Currently connected to sensor at {self.client.remoteAddress()}.
-            Please disconnect before (re-)connecting to (another) sensor."""
+            msg = f"Currently connected to sensor at {self._sensor_address()}." \
+                   " Please disconnect before (re-)connecting to (another) sensor."
             self.status_update.emit(msg)
             return
-        self.status_update.emit(f"Connecting to sensor at {sensor.address().toString()}")
+        self.status_update.emit(f"Connecting to sensor at {sensor.address().toString()}.")
         self.client = QLowEnergyController.createCentral(sensor)
         self.client.errorOccurred.connect(self._catch_error)
         self.client.connected.connect(self._discover_services)
@@ -78,7 +81,7 @@ class SensorClient(QObject):
             print("Unsubscribing from HR service.")
             self.hr_service.writeDescriptor(self.hr_notification, self.DISABLE_NOTIFICATION)
         if self.client:
-            self.status_update.emit(f"Disconnecting from sensor at {self.client.remoteAddress()}")
+            self.status_update.emit(f"Disconnecting from sensor at {self._sensor_address()}.")
             self.client.disconnectFromDevice()
 
     def _discover_services(self):
@@ -87,11 +90,11 @@ class SensorClient(QObject):
     def _connect_hr_service(self):
         hr_service = [s for s in self.client.services() if s == self.HR_SERVICE]
         if not hr_service:
-            print(f"Couldn't find HR service on {self.client.remoteAddress()}.")
+            print(f"Couldn't find HR service on {self._sensor_address()}.")
             return
         self.hr_service = self.client.createServiceObject(*hr_service)
         if not self.hr_service:
-            print(f"Couldn't establish connection to HR service on {self.client.remoteAddress()}.")
+            print(f"Couldn't establish connection to HR service on {self._sensor_address()}.")
             return
         self.hr_service.stateChanged.connect(self._start_hr_notification)
         self.hr_service.characteristicChanged.connect(self._data_handler)
@@ -102,14 +105,14 @@ class SensorClient(QObject):
             return
         hr_char = self.hr_service.characteristic(self.HR_CHARACTERISTIC)
         if not hr_char.isValid():
-            print(f"Couldn't find HR characterictic on {self.client.remoteAddress()}.")
+            print(f"Couldn't find HR characterictic on {self._sensor_address()}.")
         self.hr_notification = hr_char.descriptor(QBluetoothUuid.DescriptorType.ClientCharacteristicConfiguration)
         if not self.hr_notification.isValid():
             print("HR characteristic is invalid.")
         self.hr_service.writeDescriptor(self.hr_notification, self.ENABLE_NOTIFICATION)
 
     def _reset_connection(self):
-        print(f"Discarding sensor at {self.client.remoteAddress()}")
+        print(f"Discarding sensor at {self._sensor_address()}.")
         self._remove_service()
         self._remove_client()
 
