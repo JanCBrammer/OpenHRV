@@ -1,4 +1,7 @@
 # Changelog
+### Version 0.2.0 (month dd, yyyy)
++ enhancement: removed Redis dependency and recording of external Redis channels.
++ enhancement: handling Bluetooth connection with QtBluetooth instead of bleak (removed bleak dependency).
 
 ### Version 0.1.3 (January 08, 2022)
 + enhancement: Improved Bluetooth connection (c1b4211801ed9e819c7c9bfb880dd44f54e77354, 4e0b72a269d696afba89530f172c7813ae3aef9a).
