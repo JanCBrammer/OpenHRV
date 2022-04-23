@@ -1,4 +1,4 @@
-<img src="https://github.com/JanCBrammer/OpenHRV/raw/main/logo.png" width="125" height="125" />
+<img src="https://github.com/JanCBrammer/OpenHRV/raw/main/docs/logo.png" width="125" height="125" />
 
 # OpenHRV
 
@@ -13,7 +13,7 @@ and run it, no installation required.
 
 ### Linux, MacOS, Windows
 
-Clone the repository and run [OpenHRV.py](https://github.com/JanCBrammer/OpenHRV/blob/main/OpenHRV.py)
+Clone the repository and run [OpenHRV.py](https://github.com/JanCBrammer/OpenHRV/blob/main/openhrv/OpenHRV.py)
 in a Python environment that contains the following dependencies:
 
 * Python >= 3.10
@@ -38,7 +38,7 @@ if you want to connect to another sensor, or if an error occurs with the connect
 Should you have problems with the connection try disconnecting, and then reconnecting
 the sensor.
 
-![connect_sensor](connect_sensor.gif)
+![connect_sensor](https://github.com/JanCBrammer/OpenHRV/raw/main/docs/connect_sensor.gif)
 
 ### Set an HRV target
 You can personalize the HRV target using the `Target` slider. After you've
@@ -46,7 +46,7 @@ been training for a while you will have a good idea of what's an attainable targ
 for you (this can vary depending on how much sleep or coffee you had etc.). You
 can adjust the target anytime if you find the current target too easy or difficult.
 
-![adjust_hrv_target](adjust_hrv_target.gif)
+![adjust_hrv_target](https://github.com/JanCBrammer/OpenHRV/raw/main/docs/adjust_hrv_target.gif)
 
 ### Set a breathing pace
 The breathing pacer can help you increase your HRV. Breathe out as the blue
@@ -56,7 +56,7 @@ has a personal breathing rate at which their HRV is at its highest. Usually that
 rate is somewhere between 4 and 7 breaths per minute. You can also hide the pacer
 by unchecking the `Show pacer` box if you want to practice regulating HRV without pacing.
 
-![adjust_breathing_pacer](adjust_breathing_pacer.gif)
+![adjust_breathing_pacer](https://github.com/JanCBrammer/OpenHRV/raw/main/docs/adjust_breathing_pacer.gif)
 
 
 ### Biofeedback training
@@ -67,4 +67,4 @@ the white HRV curve will go up. There is no "ideal" HRV, as in "everyone should 
 an HRV of 500 msec". Try to increase HRV relative to what you have achieved before
 and be aware that it can take a fair bit of practice to improve.
 
-![biofeedback_demo](biofeedback_demo.gif)
+![biofeedback_demo](https://github.com/JanCBrammer/OpenHRV/raw/main/docs/biofeedback_demo.gif)
