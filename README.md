@@ -16,11 +16,10 @@ and run it, no installation required.
 Clone the repository and run [OpenHRV.py](https://github.com/JanCBrammer/OpenHRV/blob/main/OpenHRV.py)
 in a Python environment that contains the following dependencies:
 
-* Python >= 3.8
+* Python >= 3.10
 * PySide6
 * pyqtgraph
 * numpy
-* bleak
 
 It is highly recommended to install these dependencies in a virtual environment,
 e.g., using [conda](https://docs.python.org/3/library/venv.html) or 
