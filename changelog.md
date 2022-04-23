@@ -1,11 +1,12 @@
 # Changelog
-### Version 0.2.0 (month dd, yyyy)
-+ enhancement: removed Redis dependency and recording of external Redis channels.
+
+### Version 0.2.0 (April 23, 2022)
++ enhancement: removed recording of Redis channels (removed Redis dependency).
 + enhancement: handling Bluetooth connection with QtBluetooth instead of bleak (removed bleak dependency).
 
 ### Version 0.1.3 (January 08, 2022)
-+ enhancement: Improved Bluetooth connection (c1b4211801ed9e819c7c9bfb880dd44f54e77354, 4e0b72a269d696afba89530f172c7813ae3aef9a).
-+ bugfix: No more connection attempt with empty address menu (bf2e961b24612b1bb2618e49a5540724eee631ec).
++ enhancement: Improved Bluetooth connection.
++ bugfix: No more connection attempt with empty address menu.
 
 ### Version 0.1.2 (May 18, 2021)
 + enhancement: Local HRV is now averaged over a fixed window of 15 seconds. Removed slider for HRV mean window size.
