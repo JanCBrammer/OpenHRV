@@ -50,7 +50,14 @@ class Model(QObject):
         if value < 273 or value > 2000:
             print(f"Correcting invalid IBI: {value}")
             return np.median(self._ibis_buffer[-11:])
-        return value
+        
+        # correct to previous value if absolute IBI jump size is larger than 250 and 3rd, 4th and 5th previous values have not been corrected
+        elif abs((self._ibis_buffer[-2] - value)) > 250 and (self._ibis_buffer[-3] != self._ibis_buffer[-4]) and (self._ibis_buffer[-4] != self._ibis_buffer[-5]):
+            print(f"Correcting spike in IBI due to previous value: {self._ibis_buffer[-2]} and current value: {value}")
+            return self._ibis_buffer[-2]
+        
+        else:
+            return value
 
     def compute_local_hrv(self):
         self._duration_current_phase += self._ibis_buffer[-1]
