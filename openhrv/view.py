@@ -275,9 +275,6 @@ class View(QMainWindow):
         self.recording_statusbar.setRange(0, status)    # indicates busy state if progress is 0
 
     def show_status(self, status, print_to_terminal=True):
-        if status == "clear_message":
-            self.statusbar.clearMessage()
-            return
         self.statusbar.showMessage(status, 0)
         if print_to_terminal:
             print(status)
