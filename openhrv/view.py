@@ -5,10 +5,11 @@ from PySide6.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
                                QSlider, QGroupBox, QFormLayout, QCheckBox,
                                QFileDialog, QProgressBar, QGridLayout)
-from PySide6.QtCore import Qt, QThread, Signal, QObject
+from PySide6.QtCore import Qt, QThread, Signal, QObject, QTimer
 from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
 from logger import Logger
+from pacer import Pacer
 
 import resources    # noqa
 
@@ -30,6 +31,11 @@ class View(QMainWindow):
 
         self.model = model
         self.signals = ViewSignals()
+
+        self.pacer = Pacer()
+        self.pacer_timer = QTimer()
+        self.pacer_timer.timeout.connect(self.plot_pacer_disk)
+        self.pacer_timer.setInterval(self.pacer.refresh_period * 1000)
 
         self.scanner = SensorScanner()
         self.scanner.sensor_update.connect(self.model.set_sensors)
@@ -206,11 +212,12 @@ class View(QMainWindow):
         self.model.ibis_buffer_update.connect(self.plot_ibis)
         self.model.mean_hrv_update.connect(self.plot_hrv)
         self.model.addresses_update.connect(self.list_addresses)
-        self.model.pacer_disk_update.connect(self.plot_pacer_disk)
         self.model.pacer_rate_update.connect(self.update_pacer_label)
         self.model.hrv_target_update.connect(self.update_hrv_target)
 
         self.logger_thread.start()
+        self.pacer_timer.start()
+
 
     def closeEvent(self, event):
         """Properly shut down all threads."""
@@ -257,8 +264,9 @@ class View(QMainWindow):
         self.address_menu.clear()
         self.address_menu.addItems(addresses[1])
 
-    def plot_pacer_disk(self, coordinates):
-        self.pacer_disc.setData(*coordinates[1])
+    def plot_pacer_disk(self):
+        coordinates = self.pacer.update(self.model.breathing_rate)
+        self.pacer_disc.setData(*coordinates)
 
     def update_pacer_label(self, rate):
         self.pacer_label.setText(f"Rate: {rate[1]}")

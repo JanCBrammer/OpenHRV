@@ -10,7 +10,6 @@ class Model(QObject):
     ibis_buffer_update = Signal(tuple)    # tuple(string, np.ndarray)
     mean_hrv_update = Signal(tuple)    # tuple(string, np.ndarray)
     addresses_update = Signal(tuple)    # tuple(string, list)
-    pacer_disk_update = Signal(tuple)    # tuple(string, list)
     pacer_rate_update = Signal(tuple)    # tuple(string, float)
     hrv_target_update = Signal(tuple)    # tuple(string, int)
     biofeedback_update = Signal(tuple)    # tuple(string, float)
@@ -164,15 +163,6 @@ class Model(QObject):
     def set_hrv_target(self, value):
         self._hrv_target = value
         self.hrv_target_update.emit(("HrvTarget", value))
-
-    @property
-    def pacer_coordinates(self):
-        return self._pacer_coordinates
-
-    @pacer_coordinates.setter
-    def pacer_coordinates(self, value):
-        self._pacer_coordinates = value
-        self.pacer_disk_update.emit(("PacerCoordinates", value))
 
     @property
     def current_ibi_phase(self):
