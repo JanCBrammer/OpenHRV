@@ -8,11 +8,9 @@ class Pacer(QObject):
     def __init__(self):
         super().__init__()
 
-        self.refresh_freq = 8
-        self.refresh_period = 1 / self.refresh_freq
-        self.theta = np.linspace(0, 2 * np.pi, 75)
-        self.cos_theta = np.cos(self.theta)
-        self.sin_theta = np.sin(self.theta)
+        theta = np.linspace(0, 2 * np.pi, 75)
+        self.cos_theta = np.cos(theta)
+        self.sin_theta = np.sin(theta)
 
     def breathing_pattern(self, breathing_rate, time):
         return 0.5 + 0.5 * np.sin(2 * np.pi * breathing_rate / 60 * time)    # scale such that amplitude fluctuates in [0, 1]

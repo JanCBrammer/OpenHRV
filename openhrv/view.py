@@ -34,8 +34,8 @@ class View(QMainWindow):
 
         self.pacer = Pacer()
         self.pacer_timer = QTimer()
+        self.pacer_timer.setInterval(1 / 8 * 1000)    # redraw pacer at 8Hz
         self.pacer_timer.timeout.connect(self.plot_pacer_disk)
-        self.pacer_timer.setInterval(self.pacer.refresh_period * 1000)
 
         self.scanner = SensorScanner()
         self.scanner.sensor_update.connect(self.model.set_sensors)
