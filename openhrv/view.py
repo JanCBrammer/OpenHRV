@@ -10,6 +10,8 @@ from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient
 from sensor import SensorScanner, SensorClient
 from logger import Logger
 from pacer import Pacer
+from config import (breathing_rate_to_tick, MAX_BREATHING_RATE,
+                    MIN_BREATHING_RATE)
 
 import resources    # noqa
 
@@ -30,6 +32,12 @@ class View(QMainWindow):
         self.setWindowIcon(QIcon(":/logo.png"))
 
         self.model = model
+        self.model.ibis_buffer_update.connect(self.plot_ibis)
+        self.model.mean_hrv_update.connect(self.plot_hrv)
+        self.model.addresses_update.connect(self.list_addresses)
+        self.model.pacer_rate_update.connect(self.update_pacer_label)
+        self.model.hrv_target_update.connect(self.update_hrv_target)
+
         self.signals = ViewSignals()
 
         self.pacer = Pacer()
@@ -113,12 +121,14 @@ class View(QMainWindow):
         self.pacer_disc.setFillLevel(1)
         self.pacer_plot.addItem(self.pacer_disc)
 
+        self.pacer_label = QLabel()
         self.pacer_rate = QSlider(Qt.Horizontal)
+        self.pacer_rate.setTickPosition(QSlider.TicksBelow)
         self.pacer_rate.setTracking(False)
-        self.pacer_rate.setRange(0, 6)    # transformed to bpm [4, 7], step .5 by model
+        self.pacer_rate.setRange(breathing_rate_to_tick(MIN_BREATHING_RATE),
+                                 breathing_rate_to_tick(MAX_BREATHING_RATE))
         self.pacer_rate.valueChanged.connect(self.model.set_breathing_rate)
-        self.pacer_rate.setSliderPosition(4)    # corresponds to 6 bpm
-        self.pacer_label = QLabel(f"Rate: {self.model.breathing_rate}")
+        self.pacer_rate.setValue(breathing_rate_to_tick(MAX_BREATHING_RATE))
 
         self.pacer_toggle = QCheckBox("Show pacer", self)
         self.pacer_toggle.setChecked(True)
@@ -208,12 +218,6 @@ class View(QMainWindow):
         self.hlayout1.addWidget(self.recording_panel, stretch=25)
 
         self.vlayout0.addLayout(self.hlayout1)
-
-        self.model.ibis_buffer_update.connect(self.plot_ibis)
-        self.model.mean_hrv_update.connect(self.plot_hrv)
-        self.model.addresses_update.connect(self.list_addresses)
-        self.model.pacer_rate_update.connect(self.update_pacer_label)
-        self.model.hrv_target_update.connect(self.update_hrv_target)
 
         self.logger_thread.start()
         self.pacer_timer.start()

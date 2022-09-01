@@ -1,4 +1,5 @@
-from config import MEANHRV_BUFFER_SIZE, HRV_BUFFER_SIZE, IBI_BUFFER_SIZE
+from config import (tick_to_breathing_rate, MEANHRV_BUFFER_SIZE,
+                    HRV_BUFFER_SIZE, IBI_BUFFER_SIZE, MAX_BREATHING_RATE)
 from PySide6.QtCore import QObject, Signal, Slot, Property
 import numpy as np
 from utils import find_indices_to_average
@@ -26,7 +27,7 @@ class Model(QObject):
         self._last_ibi_phase = -1
         self._last_ibi_extreme = 0
         self._sensors = []
-        self._breathing_rate = 6.
+        self._breathing_rate = float(MAX_BREATHING_RATE)
         self._hrv_mean_window = 15
         self._hrv_target = 200
         self._duration_current_phase = 0
@@ -152,7 +153,7 @@ class Model(QObject):
 
     @Slot(float)
     def set_breathing_rate(self, value):
-        self._breathing_rate = (value + 8) / 2    # force values into [4, 7], step .5
+        self._breathing_rate = tick_to_breathing_rate(value)
         self.pacer_rate_update.emit(("PacerRate", self._breathing_rate))
 
     @Property(int)
