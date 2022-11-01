@@ -18,7 +18,6 @@ in a Python environment that contains the following dependencies:
 
 * Python >= 3.10
 * PySide6
-* pyqtgraph
 * numpy
 
 It is highly recommended to install these dependencies in a virtual environment,
