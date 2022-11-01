@@ -36,8 +36,10 @@ class Logger(QObject):
         if not self.file:
             return
         key, val = data
-        if isinstance(val, (list, np.ndarray)):
+        if isinstance(val, list):
             val = val[-1]
+        if isinstance(val, tuple):
+            val = val[-1][-1]
         if isinstance(val, np.int32):
             val = int(val)
         timestamp = datetime.now().isoformat()
