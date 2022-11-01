@@ -1,20 +1,118 @@
-import pyqtgraph as pg
 from utils import valid_address, valid_path
 from datetime import datetime
 from PySide6.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
                                QVBoxLayout, QWidget, QLabel, QComboBox,
                                QSlider, QGroupBox, QFormLayout, QCheckBox,
-                               QFileDialog, QProgressBar, QGridLayout)
-from PySide6.QtCore import Qt, QThread, Signal, QObject, QTimer
-from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient
+                               QFileDialog, QProgressBar, QGridLayout, QSizePolicy)
+from PySide6.QtCore import Qt, QThread, Signal, QObject, QTimer, QMargins, QSize
+from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient, QColor
+from PySide6.QtCharts import (QChartView, QChart, QSplineSeries, QValueAxis,
+                              QAreaSeries)
 from sensor import SensorScanner, SensorClient
 from logger import Logger
 from pacer import Pacer
-from config import (breathing_rate_to_tick, MAX_BREATHING_RATE,
-                    MIN_BREATHING_RATE)
+from config import (breathing_rate_to_tick, MEANHRV_BUFFER_SIZE,
+                    IBI_BUFFER_SIZE, MAX_BREATHING_RATE, MIN_BREATHING_RATE)
 
 import resources    # noqa
 
+BLUE = QColor(135, 206, 250)
+WHITE = QColor(255, 255, 255)
+GREEN = QColor(0, 255, 0)
+YELLOW = QColor(255, 255, 0)
+RED = QColor(255, 0, 0)
+
+
+class PacerWidget(QChartView):
+
+    def __init__(self, x_values=None, y_values=None, color=BLUE):
+        super().__init__()
+
+        self.setSizePolicy(QSizePolicy(QSizePolicy.Fixed, # enforce self.sizeHint by fixing horizontal (width) policy
+                                       QSizePolicy.Preferred))
+
+        self.plot = QChart()
+        self.plot.legend().setVisible(False)
+        self.plot.setBackgroundRoundness(0)
+        self.plot.setMargins(QMargins(0, 0, 0, 0))
+
+        self.disc_circumference_coord = QSplineSeries()
+        if x_values is not None and y_values is not None:
+            self._instantiate_series(x_values, y_values)
+        self.disk = QAreaSeries(self.disc_circumference_coord)
+        self.disk.setColor(color)
+        self.plot.addSeries(self.disk)
+
+        self.x_axis = QValueAxis()
+        self.x_axis.setRange(-1, 1)
+        self.x_axis.setVisible(False)
+        self.plot.addAxis(self.x_axis, Qt.AlignBottom)
+        self.disk.attachAxis(self.x_axis)
+
+        self.y_axis = QValueAxis()
+        self.y_axis.setRange(-1, 1)
+        self.y_axis.setVisible(False)
+        self.plot.addAxis(self.y_axis, Qt.AlignLeft)
+        self.disk.attachAxis(self.y_axis)
+
+        self.setChart(self.plot)
+
+    def _instantiate_series(self, x_values, y_values):
+        for x, y in zip(x_values, y_values):
+            self.disc_circumference_coord.append(x, y)
+
+    def update_series(self, x_values, y_values):
+        for i, (x, y) in enumerate(zip(x_values, y_values)):
+            self.disc_circumference_coord.replace(i, x, y)
+
+    def sizeHint(self):
+        height = self.size().height()
+        return QSize(height, height) # force square aspect ratio
+
+    def resizeEvent(self, event):
+        if self.size().width() != self.size().height():
+            self.updateGeometry() # adjusts geometry based on sizeHint
+        return super().resizeEvent(event)
+
+
+class XYSeriesWidget(QChartView):
+
+    def __init__(self, x_values=None, y_values=None, line_color=BLUE):
+        super().__init__()
+
+        self.plot = QChart()
+        self.plot.legend().setVisible(False)
+        self.plot.setBackgroundRoundness(0)
+        self.plot.setMargins(QMargins(0, 0, 0, 0))
+
+        self.time_series = QSplineSeries()
+        self.plot.addSeries(self.time_series)
+        pen = self.time_series.pen()
+        pen.setWidth(4)
+        pen.setColor(line_color)
+        self.time_series.setPen(pen)
+        if x_values is not None and y_values is not None:
+            self._instantiate_series(x_values, y_values)
+
+        self.x_axis = QValueAxis()
+        self.x_axis.setLabelFormat("%i")
+        self.plot.addAxis(self.x_axis, Qt.AlignBottom)
+        self.time_series.attachAxis(self.x_axis)
+
+        self.y_axis = QValueAxis()
+        self.y_axis.setLabelFormat("%i")
+        self.plot.addAxis(self.y_axis, Qt.AlignLeft)
+        self.time_series.attachAxis(self.y_axis)
+
+        self.setChart(self.plot)
+
+    def _instantiate_series(self, x_values, y_values):
+        for x, y in zip(x_values, y_values):
+            self.time_series.append(x, y)
+
+    def update_series(self, x_values, y_values):
+       for i, (x, y) in enumerate(zip(x_values, y_values)):
+            self.time_series.replace(i, x, y)
 
 class ViewSignals(QObject):
     """Cannot be defined on View directly since Signal needs to be defined on
@@ -46,80 +144,51 @@ class View(QMainWindow):
         self.pacer_timer.timeout.connect(self.plot_pacer_disk)
 
         self.scanner = SensorScanner()
-        self.scanner.sensor_update.connect(self.model.set_sensors)
+        self.scanner.sensor_update.connect(self.model.update_sensors)
         self.scanner.status_update.connect(self.show_status)
 
         self.sensor = SensorClient()
-        self.sensor.ibi_update.connect(self.model.set_ibis_buffer)
+        self.sensor.ibi_update.connect(self.model.update_ibis_buffer)
         self.sensor.status_update.connect(self.show_status)
 
         self.logger = Logger()
+        self.logger.recording_status.connect(self.show_recording_status)
+        self.logger.status_update.connect(self.show_status)
         self.logger_thread = QThread()
+        self.logger_thread.finished.connect(self.logger.save_recording)
+        self.signals.start_recording.connect(self.logger.start_recording)
         self.logger.moveToThread(self.logger_thread)
+
         self.model.ibis_buffer_update.connect(self.logger.write_to_file)
         self.model.addresses_update.connect(self.logger.write_to_file)
         self.model.pacer_rate_update.connect(self.logger.write_to_file)
         self.model.hrv_target_update.connect(self.logger.write_to_file)
         self.model.biofeedback_update.connect(self.logger.write_to_file)
         self.signals.annotation.connect(self.logger.write_to_file)
-        self.logger_thread.finished.connect(self.logger.save_recording)
-        self.signals.start_recording.connect(self.logger.start_recording)
-        self.logger.recording_status.connect(self.show_recording_status)
-        self.logger.status_update.connect(self.show_status)
 
-        self.ibis_plot = pg.PlotWidget()
-        self.ibis_plot.setBackground("w")
-        self.ibis_plot.setLabel("left", "Inter-Beat-Interval (msec)",
-                                **{"font-size": "25px"})
-        self.ibis_plot.setLabel("bottom", "Seconds", **{"font-size": "25px"})
-        self.ibis_plot.showGrid(y=True)
-        self.ibis_plot.setYRange(300, 1500, padding=0)
-        self.ibis_plot.setMouseEnabled(x=False, y=False)
+        self.ibis_widget = XYSeriesWidget(self.model.ibis_seconds, self.model.ibis_buffer)
+        self.ibis_widget.x_axis.setTitleText("Seconds")
+        self.ibis_widget.x_axis.setRange(-IBI_BUFFER_SIZE, 0.)
+        self.ibis_widget.x_axis.setTickCount(7)
+        self.ibis_widget.x_axis.setTickInterval(10.)
+        self.ibis_widget.y_axis.setTitleText("Inter-Beat-Interval (msec)")
+        self.ibis_widget.y_axis.setRange(300, 1500)
 
-        self.ibis_signal = pg.PlotCurveItem()
-        pen = pg.mkPen(color=(0, 191, 255), width=7.5)
-        self.ibis_signal.setPen(pen)
-        self.ibis_signal.setData(self.model.ibis_seconds,
-                                 self.model.ibis_buffer)
-        self.ibis_plot.addItem(self.ibis_signal)
-
-        self.mean_hrv_plot = pg.PlotWidget()
-        self.mean_hrv_plot.setBackground("w")
-        self.mean_hrv_plot.setLabel("left", "HRV (msec)",
-                                **{"font-size": "25px"})
-        self.mean_hrv_plot.setLabel("bottom", "Seconds", **{"font-size": "25px"})
-        self.mean_hrv_plot.showGrid(y=True)
-        self.mean_hrv_plot.setYRange(0, 600, padding=0)
-        self.mean_hrv_plot.setMouseEnabled(x=False, y=False)
+        self.hrv_widget = XYSeriesWidget(self.model.mean_hrv_seconds, self.model.mean_hrv_buffer, WHITE)
+        self.hrv_widget.x_axis.setTitleText("Seconds")
+        self.hrv_widget.x_axis.setRange(-MEANHRV_BUFFER_SIZE, 0)
+        self.hrv_widget.y_axis.setTitleText("HRV (msec)")
+        self.hrv_widget.y_axis.setRange(0, self.model.hrv_target)
         colorgrad = QLinearGradient(0, 0, 0, 1)    # horizontal gradient
         colorgrad.setCoordinateMode(QGradient.ObjectMode)
-        colorgrad.setColorAt(0, pg.mkColor("g"))
-        colorgrad.setColorAt(.5, pg.mkColor("y"))
-        colorgrad.setColorAt(1, pg.mkColor("r"))
+        colorgrad.setColorAt(0, GREEN)
+        colorgrad.setColorAt(.6, YELLOW)
+        colorgrad.setColorAt(1, RED)
         brush = QBrush(colorgrad)
-        self.mean_hrv_plot.getViewBox().setBackgroundColor(brush)
+        self.hrv_widget.plot.setPlotAreaBackgroundBrush(brush)
+        self.hrv_widget.plot.setPlotAreaBackgroundVisible(True)
 
-        self.mean_hrv_signal = pg.PlotCurveItem()
-        pen = pg.mkPen(color="w", width=7.5)
-        self.mean_hrv_signal.setPen(pen)
-        self.mean_hrv_signal.setData(self.model.mean_hrv_seconds, self.model.mean_hrv_buffer)
-        self.mean_hrv_plot.addItem(self.mean_hrv_signal)
-
-        self.pacer_plot = pg.PlotWidget()
-        self.pacer_plot.setBackground("w")
-        self.pacer_plot.setAspectLocked(lock=True, ratio=1)
-        self.pacer_plot.setMouseEnabled(x=False, y=False)
-        self.pacer_plot.disableAutoRange()
-        self.pacer_plot.setXRange(-1, 1, padding=0)
-        self.pacer_plot.setYRange(-1, 1, padding=0)
-        self.pacer_plot.hideAxis("left")
-        self.pacer_plot.hideAxis("bottom")
-
-        self.pacer_disc = pg.PlotCurveItem()
-        brush = pg.mkBrush(color=(135, 206, 250))
-        self.pacer_disc.setBrush(brush)
-        self.pacer_disc.setFillLevel(1)
-        self.pacer_plot.addItem(self.pacer_disc)
+        self.pacer_widget = PacerWidget(*self.pacer.update(self.model.breathing_rate))
 
         self.pacer_label = QLabel()
         self.pacer_rate = QSlider(Qt.Horizontal)
@@ -127,7 +196,7 @@ class View(QMainWindow):
         self.pacer_rate.setTracking(False)
         self.pacer_rate.setRange(breathing_rate_to_tick(MIN_BREATHING_RATE),
                                  breathing_rate_to_tick(MAX_BREATHING_RATE))
-        self.pacer_rate.valueChanged.connect(self.model.set_breathing_rate)
+        self.pacer_rate.valueChanged.connect(self.model.update_breathing_rate)
         self.pacer_rate.setValue(breathing_rate_to_tick(MAX_BREATHING_RATE))
 
         self.pacer_toggle = QCheckBox("Show pacer", self)
@@ -139,9 +208,8 @@ class View(QMainWindow):
         self.hrv_target = QSlider(Qt.Horizontal)
         self.hrv_target.setRange(50, 600)
         self.hrv_target.setSingleStep(10)
-        self.hrv_target.valueChanged.connect(self.model.set_hrv_target)
+        self.hrv_target.valueChanged.connect(self.model.update_hrv_target)
         self.hrv_target.setSliderPosition(self.model.hrv_target)
-        self.mean_hrv_plot.setYRange(0, self.model.hrv_target, padding=0)
 
         self.scan_button = QPushButton("Scan")
         self.scan_button.clicked.connect(self.scanner.scan)
@@ -177,11 +245,11 @@ class View(QMainWindow):
         self.vlayout0 = QVBoxLayout(self.central_widget)
 
         self.hlayout0 = QHBoxLayout()
-        self.hlayout0.addWidget(self.ibis_plot, stretch=80)
-        self.hlayout0.addWidget(self.pacer_plot, stretch=20)
-        self.vlayout0.addLayout(self.hlayout0)
+        self.hlayout0.addWidget(self.ibis_widget)
+        self.hlayout0.addWidget(self.pacer_widget)
+        self.vlayout0.addLayout(self.hlayout0, stretch=50)
 
-        self.vlayout0.addWidget(self.mean_hrv_plot)
+        self.vlayout0.addWidget(self.hrv_widget, stretch=50)
 
         self.hlayout1 = QHBoxLayout()
 
@@ -224,7 +292,7 @@ class View(QMainWindow):
 
 
     def closeEvent(self, event):
-        """Properly shut down all threads."""
+        """Shut down all threads."""
         print("Closing threads...")
 
         self.sensor.disconnect_client()
@@ -259,10 +327,10 @@ class View(QMainWindow):
         self.sensor.disconnect_client()
 
     def plot_ibis(self, ibis):
-        self.ibis_signal.setData(self.model.ibis_seconds, ibis[1])
+        self.ibis_widget.update_series(*ibis[1])
 
     def plot_hrv(self, hrv):
-        self.mean_hrv_signal.setData(self.model.mean_hrv_seconds, hrv[1])
+        self.hrv_widget.update_series(*hrv[1])
 
     def list_addresses(self, addresses):
         self.address_menu.clear()
@@ -270,18 +338,18 @@ class View(QMainWindow):
 
     def plot_pacer_disk(self):
         coordinates = self.pacer.update(self.model.breathing_rate)
-        self.pacer_disc.setData(*coordinates)
+        self.pacer_widget.update_series(*coordinates)
 
     def update_pacer_label(self, rate):
         self.pacer_label.setText(f"Rate: {rate[1]}")
 
     def update_hrv_target(self, target):
-        self.mean_hrv_plot.setYRange(0, target[1], padding=0)
+        self.hrv_widget.y_axis.setRange(0, target[1])
         self.hrv_target_label.setText(f"Target: {target[1]}")
 
     def toggle_pacer(self):
-        visible = self.pacer_plot.isVisible()
-        self.pacer_plot.setVisible(not visible)
+        visible = self.pacer_widget.isVisible()
+        self.pacer_widget.setVisible(not visible)
 
     def show_recording_status(self, status):
         self.recording_statusbar.setRange(0, status)    # indicates busy state if progress is 0
