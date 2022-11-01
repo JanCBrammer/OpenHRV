@@ -8,7 +8,7 @@ class Pacer(QObject):
     def __init__(self):
         super().__init__()
 
-        theta = np.linspace(0, 2 * np.pi, 75)
+        theta = np.linspace(0, 2 * np.pi, 40)
         self.cos_theta = np.cos(theta)
         self.sin_theta = np.sin(theta)
 
