@@ -1,9 +1,10 @@
 IBI_BUFFER_SIZE = 60
 HRV_BUFFER_SIZE = 10
 MEANHRV_BUFFER_SIZE = 120
+HRV_MEAN_WINDOW = 15    # seconds
 
-MIN_BREATHING_RATE = 4
-MAX_BREATHING_RATE = 7
+MIN_BREATHING_RATE = 4    # breath per minute
+MAX_BREATHING_RATE = 7   # breath per minute
 def tick_to_breathing_rate(tick):
     return float((tick + 8) / 2)    # scale tick to [4, 7], step .5
 def breathing_rate_to_tick(rate):
