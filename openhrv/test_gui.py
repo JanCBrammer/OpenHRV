@@ -37,7 +37,9 @@ class MockSensorClient(QObject):
         self.timer.timeout.connect(self.simulate_ibi)
 
     def connect_client(self, sensor):
-        self.status_update.emit(f"Connecting to sensor at {sensor.address().toString()}.")
+        self.status_update.emit(
+            f"Connecting to sensor at {sensor.address().toString()}."
+        )
         self.timer.start()
 
     def disconnect_client(self):
@@ -52,7 +54,9 @@ if __name__ == "__main__":
     # Mock classes need to replace their mocked counterparts in namespace before the latter are imported elsewhere
     # (https://stackoverflow.com/questions/3765222/monkey-patch-python-class).
     import sensor
+
     sensor.SensorClient = MockSensorClient
     sensor.SensorScanner = MockSensorScanner
     from OpenHRV import main
+
     main()

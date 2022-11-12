@@ -2,6 +2,7 @@ import numpy as np
 from datetime import datetime
 from PySide6.QtCore import QObject, Signal
 
+
 class Logger(QObject):
 
     recording_status = Signal(int)
@@ -14,9 +15,9 @@ class Logger(QObject):
     def start_recording(self, file_path):
         if self.file:
             self.status_update.emit(f"Already writing to a file at {self.file.name}.")
-            return    # only write to one file at a time
+            return  # only write to one file at a time
         self.file = open(file_path, "a+")
-        self.file.write("event,value,timestamp\n")    # header
+        self.file.write("event,value,timestamp\n")  # header
         self.recording_status.emit(0)
         self.status_update.emit(f"Started recording to {self.file.name}.")
 

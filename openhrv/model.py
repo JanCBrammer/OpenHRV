@@ -1,6 +1,11 @@
-from config import (tick_to_breathing_rate, MEANHRV_BUFFER_SIZE,
-                    HRV_BUFFER_SIZE, IBI_BUFFER_SIZE, MAX_BREATHING_RATE,
-                    HRV_MEAN_WINDOW)
+from config import (
+    tick_to_breathing_rate,
+    MEANHRV_BUFFER_SIZE,
+    HRV_BUFFER_SIZE,
+    IBI_BUFFER_SIZE,
+    MAX_BREATHING_RATE,
+    HRV_MEAN_WINDOW,
+)
 from PySide6.QtCore import QObject, Signal, Slot
 import numpy as np
 from utils import find_indices_to_average
@@ -9,11 +14,11 @@ from utils import find_indices_to_average
 class Model(QObject):
 
     # Signal format is (name, value).
-    ibis_buffer_update = Signal(tuple)    # tuple(string, tuple(np.array, np.array))
-    mean_hrv_update = Signal(tuple)    # tuple(string, tuple(np.array, np.array))
-    addresses_update = Signal(tuple)    # tuple(string, list)
-    pacer_rate_update = Signal(tuple)    # tuple(string, float)
-    hrv_target_update = Signal(tuple)    # tuple(string, int)
+    ibis_buffer_update = Signal(tuple)  # tuple(string, tuple(np.array, np.array))
+    mean_hrv_update = Signal(tuple)  # tuple(string, tuple(np.array, np.array))
+    addresses_update = Signal(tuple)  # tuple(string, list)
+    pacer_rate_update = Signal(tuple)  # tuple(string, float)
+    hrv_target_update = Signal(tuple)  # tuple(string, int)
 
     def __init__(self):
         super().__init__()
@@ -36,7 +41,9 @@ class Model(QObject):
         self.update_ibis_seconds(value)
         self.ibis_buffer = np.roll(self.ibis_buffer, -1)
         self.ibis_buffer[-1] = self.validate_ibi(value)
-        self.ibis_buffer_update.emit(("InterBeatInterval", (self.ibis_seconds, self.ibis_buffer)))
+        self.ibis_buffer_update.emit(
+            ("InterBeatInterval", (self.ibis_seconds, self.ibis_buffer))
+        )
         self.compute_local_hrv()
 
     @Slot(float)
@@ -52,12 +59,12 @@ class Model(QObject):
     @Slot(object)
     def update_sensors(self, sensors):
         self.sensors = sensors
-        self.addresses_update.emit(("Sensors",
-                                    [f"{s.name()}, {s.address().toString()}"
-                                     for s in sensors]))
+        self.addresses_update.emit(
+            ("Sensors", [f"{s.name()}, {s.address().toString()}" for s in sensors])
+        )
 
     def validate_ibi(self, value):
-        """ Replace IBIs corresponding to instantaneous heart rate of more than
+        """Replace IBIs corresponding to instantaneous heart rate of more than
         220, or less than 30 beats per minute with local median."""
         if value < 273 or value > 2000:
             print(f"Correcting invalid IBI: {value}")
@@ -66,7 +73,8 @@ class Model(QObject):
 
     def compute_local_hrv(self):
         self._duration_current_phase += self.ibis_buffer[-1]
-        current_ibi_phase = np.sign(self.ibis_buffer[-1] - self.ibis_buffer[-2])    # 1: IBI rises, -1: IBI falls, 0: IBI constant
+        # 1: IBI rises, -1: IBI falls, 0: IBI constant
+        current_ibi_phase = np.sign(self.ibis_buffer[-1] - self.ibis_buffer[-2])
         if current_ibi_phase == 0:
             return
         if current_ibi_phase == self._last_ibi_phase:
@@ -84,22 +92,24 @@ class Model(QObject):
         self._last_ibi_phase = current_ibi_phase
 
     def update_hrv_buffer(self, value):
-        if self._hrv_buffer[0] != -1:    # wait until buffer is full
+        if self._hrv_buffer[0] != -1:  # wait until buffer is full
             threshold = np.amax(self._hrv_buffer) * 4
-            if value > threshold:    # correct hrv values that considerably exceed threshold
+            if value > threshold:
                 print(f"Correcting outlier HRV {value} to {threshold}")
                 value = threshold
         self._hrv_buffer = np.roll(self._hrv_buffer, -1)
         self._hrv_buffer[-1] = value
-        average_idcs = find_indices_to_average(self.ibis_seconds[-HRV_BUFFER_SIZE:],
-                                               HRV_MEAN_WINDOW)
+        average_idcs = find_indices_to_average(
+            self.ibis_seconds[-HRV_BUFFER_SIZE:], HRV_MEAN_WINDOW
+        )
         self.update_mean_hrv_buffer(self._hrv_buffer[average_idcs].mean())
 
     def update_mean_hrv_buffer(self, value):
         self.mean_hrv_buffer = np.roll(self.mean_hrv_buffer, -1)
         self.mean_hrv_buffer[-1] = value
-        self.mean_hrv_update.emit(("MeanHrv", (self.mean_hrv_seconds,
-                                               self.mean_hrv_buffer)))
+        self.mean_hrv_update.emit(
+            ("MeanHrv", (self.mean_hrv_seconds, self.mean_hrv_buffer))
+        )
 
     def update_ibis_seconds(self, value):
         self.ibis_seconds = self.ibis_seconds - value / 1000

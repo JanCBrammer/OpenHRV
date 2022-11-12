@@ -1,20 +1,37 @@
 from utils import valid_address, valid_path
 from datetime import datetime
-from PySide6.QtWidgets import (QMainWindow, QPushButton, QHBoxLayout,
-                               QVBoxLayout, QWidget, QLabel, QComboBox,
-                               QSlider, QGroupBox, QFormLayout, QCheckBox,
-                               QFileDialog, QProgressBar, QGridLayout, QSizePolicy)
+from PySide6.QtWidgets import (
+    QMainWindow,
+    QPushButton,
+    QHBoxLayout,
+    QVBoxLayout,
+    QWidget,
+    QLabel,
+    QComboBox,
+    QSlider,
+    QGroupBox,
+    QFormLayout,
+    QCheckBox,
+    QFileDialog,
+    QProgressBar,
+    QGridLayout,
+    QSizePolicy,
+)
 from PySide6.QtCore import Qt, QThread, Signal, QObject, QTimer, QMargins, QSize
 from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient, QColor
-from PySide6.QtCharts import (QChartView, QChart, QSplineSeries, QValueAxis,
-                              QAreaSeries)
+from PySide6.QtCharts import QChartView, QChart, QSplineSeries, QValueAxis, QAreaSeries
 from sensor import SensorScanner, SensorClient
 from logger import Logger
 from pacer import Pacer
-from config import (breathing_rate_to_tick, MEANHRV_BUFFER_SIZE,
-                    IBI_BUFFER_SIZE, MAX_BREATHING_RATE, MIN_BREATHING_RATE)
+from config import (
+    breathing_rate_to_tick,
+    MEANHRV_BUFFER_SIZE,
+    IBI_BUFFER_SIZE,
+    MAX_BREATHING_RATE,
+    MIN_BREATHING_RATE,
+)
 
-import resources    # noqa
+import resources  # noqa
 
 BLUE = QColor(135, 206, 250)
 WHITE = QColor(255, 255, 255)
@@ -24,12 +41,15 @@ RED = QColor(255, 0, 0)
 
 
 class PacerWidget(QChartView):
-
     def __init__(self, x_values=None, y_values=None, color=BLUE):
         super().__init__()
 
-        self.setSizePolicy(QSizePolicy(QSizePolicy.Fixed, # enforce self.sizeHint by fixing horizontal (width) policy
-                                       QSizePolicy.Preferred))
+        self.setSizePolicy(
+            QSizePolicy(
+                QSizePolicy.Fixed,  # enforce self.sizeHint by fixing horizontal (width) policy
+                QSizePolicy.Preferred,
+            )
+        )
 
         self.plot = QChart()
         self.plot.legend().setVisible(False)
@@ -67,16 +87,15 @@ class PacerWidget(QChartView):
 
     def sizeHint(self):
         height = self.size().height()
-        return QSize(height, height) # force square aspect ratio
+        return QSize(height, height)  # force square aspect ratio
 
     def resizeEvent(self, event):
         if self.size().width() != self.size().height():
-            self.updateGeometry() # adjusts geometry based on sizeHint
+            self.updateGeometry()  # adjusts geometry based on sizeHint
         return super().resizeEvent(event)
 
 
 class XYSeriesWidget(QChartView):
-
     def __init__(self, x_values=None, y_values=None, line_color=BLUE):
         super().__init__()
 
@@ -111,18 +130,19 @@ class XYSeriesWidget(QChartView):
             self.time_series.append(x, y)
 
     def update_series(self, x_values, y_values):
-       for i, (x, y) in enumerate(zip(x_values, y_values)):
+        for i, (x, y) in enumerate(zip(x_values, y_values)):
             self.time_series.replace(i, x, y)
+
 
 class ViewSignals(QObject):
     """Cannot be defined on View directly since Signal needs to be defined on
     object that inherits from QObject"""
+
     annotation = Signal(tuple)
     start_recording = Signal(str)
 
 
 class View(QMainWindow):
-
     def __init__(self, model):
         super().__init__()
 
@@ -140,7 +160,7 @@ class View(QMainWindow):
 
         self.pacer = Pacer()
         self.pacer_timer = QTimer()
-        self.pacer_timer.setInterval(1 / 8 * 1000)    # redraw pacer at 8Hz
+        self.pacer_timer.setInterval(1 / 8 * 1000)  # redraw pacer at 8Hz
         self.pacer_timer.timeout.connect(self.plot_pacer_disk)
 
         self.scanner = SensorScanner()
@@ -165,23 +185,27 @@ class View(QMainWindow):
         self.model.hrv_target_update.connect(self.logger.write_to_file)
         self.signals.annotation.connect(self.logger.write_to_file)
 
-        self.ibis_widget = XYSeriesWidget(self.model.ibis_seconds, self.model.ibis_buffer)
+        self.ibis_widget = XYSeriesWidget(
+            self.model.ibis_seconds, self.model.ibis_buffer
+        )
         self.ibis_widget.x_axis.setTitleText("Seconds")
-        self.ibis_widget.x_axis.setRange(-IBI_BUFFER_SIZE, 0.)
+        self.ibis_widget.x_axis.setRange(-IBI_BUFFER_SIZE, 0.0)
         self.ibis_widget.x_axis.setTickCount(7)
-        self.ibis_widget.x_axis.setTickInterval(10.)
+        self.ibis_widget.x_axis.setTickInterval(10.0)
         self.ibis_widget.y_axis.setTitleText("Inter-Beat-Interval (msec)")
         self.ibis_widget.y_axis.setRange(300, 1500)
 
-        self.hrv_widget = XYSeriesWidget(self.model.mean_hrv_seconds, self.model.mean_hrv_buffer, WHITE)
+        self.hrv_widget = XYSeriesWidget(
+            self.model.mean_hrv_seconds, self.model.mean_hrv_buffer, WHITE
+        )
         self.hrv_widget.x_axis.setTitleText("Seconds")
         self.hrv_widget.x_axis.setRange(-MEANHRV_BUFFER_SIZE, 0)
         self.hrv_widget.y_axis.setTitleText("HRV (msec)")
         self.hrv_widget.y_axis.setRange(0, self.model.hrv_target)
-        colorgrad = QLinearGradient(0, 0, 0, 1)    # horizontal gradient
+        colorgrad = QLinearGradient(0, 0, 0, 1)  # horizontal gradient
         colorgrad.setCoordinateMode(QGradient.ObjectMode)
         colorgrad.setColorAt(0, GREEN)
-        colorgrad.setColorAt(.6, YELLOW)
+        colorgrad.setColorAt(0.6, YELLOW)
         colorgrad.setColorAt(1, RED)
         brush = QBrush(colorgrad)
         self.hrv_widget.plot.setPlotAreaBackgroundBrush(brush)
@@ -193,8 +217,10 @@ class View(QMainWindow):
         self.pacer_rate = QSlider(Qt.Horizontal)
         self.pacer_rate.setTickPosition(QSlider.TicksBelow)
         self.pacer_rate.setTracking(False)
-        self.pacer_rate.setRange(breathing_rate_to_tick(MIN_BREATHING_RATE),
-                                 breathing_rate_to_tick(MAX_BREATHING_RATE))
+        self.pacer_rate.setRange(
+            breathing_rate_to_tick(MIN_BREATHING_RATE),
+            breathing_rate_to_tick(MAX_BREATHING_RATE),
+        )
         self.pacer_rate.valueChanged.connect(self.model.update_breathing_rate)
         self.pacer_rate.setValue(breathing_rate_to_tick(MAX_BREATHING_RATE))
 
@@ -228,7 +254,7 @@ class View(QMainWindow):
         self.save_recording_button.clicked.connect(self.logger.save_recording)
 
         self.annotation = QComboBox()
-        self.annotation.setEditable(True)    # user can add custom annotations (edit + enter)
+        self.annotation.setEditable(True)
         self.annotation.setDuplicatesEnabled(False)
         self.annotation_button = QPushButton("Annotate")
         self.annotation_button.clicked.connect(self.emit_annotation)
@@ -278,7 +304,8 @@ class View(QMainWindow):
         self.recording_config.addWidget(self.start_recording_button, 0, 0)
         self.recording_config.addWidget(self.save_recording_button, 0, 1)
         self.recording_config.addWidget(self.recording_statusbar, 0, 2)
-        self.recording_config.addWidget(self.annotation, 1, 0, 1, 2)    # row, column, rowspan, columnspan
+        # row, column, rowspan, columnspan
+        self.recording_config.addWidget(self.annotation, 1, 0, 1, 2)
         self.recording_config.addWidget(self.annotation_button, 1, 2)
         self.recording_panel = QGroupBox("Recording")
         self.recording_panel.setLayout(self.recording_config)
@@ -288,7 +315,6 @@ class View(QMainWindow):
 
         self.logger_thread.start()
         self.pacer_timer.start()
-
 
     def closeEvent(self, event):
         """Shut down all threads."""
@@ -302,10 +328,14 @@ class View(QMainWindow):
     def get_filepath(self):
         current_time = datetime.now().strftime("%Y-%m-%d-%H-%M")
         default_file_name = f"OpenHRV_{current_time}.csv"
-        file_path = QFileDialog.getSaveFileName(None, "Create file",
-                                                default_file_name,
-                                                options=QFileDialog.DontUseNativeDialog)[0]    # native file dialog not reliable on Windows (most likely COM issues)
-        if not file_path:    # user cancelled or closed file dialog
+        # native file dialog not reliable on Windows (most likely COM issues)
+        file_path = QFileDialog.getSaveFileName(
+            None,
+            "Create file",
+            default_file_name,
+            options=QFileDialog.DontUseNativeDialog,
+        )[0]
+        if not file_path:  # user cancelled or closed file dialog
             return
         if not valid_path(file_path):
             self.show_status("File path is invalid or exists already.")
@@ -315,7 +345,8 @@ class View(QMainWindow):
     def connect_sensor(self):
         if not self.address_menu.currentText():
             return
-        address = self.address_menu.currentText().split(",")[1].strip()    # discard device name
+        # discard device name
+        address = self.address_menu.currentText().split(",")[1].strip()
         if not valid_address(address):
             print(f"Invalid sensor address: {address}.")
             return
@@ -351,7 +382,8 @@ class View(QMainWindow):
         self.pacer_widget.setVisible(not visible)
 
     def show_recording_status(self, status):
-        self.recording_statusbar.setRange(0, status)    # indicates busy state if progress is 0
+        """Indicate busy state if `status` is 0."""
+        self.recording_statusbar.setRange(0, status)
 
     def show_status(self, status, print_to_terminal=True):
         self.statusbar.showMessage(status, 0)

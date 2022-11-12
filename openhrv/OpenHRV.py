@@ -10,11 +10,12 @@ class Application(QApplication):
         self._model = Model()
         self._view = View(self._model)
 
+
 def main():
     app = Application(sys.argv)
     app._view.show()
     sys.exit(app.exec())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -1,7 +1,10 @@
 from PySide6.QtCore import QObject, Signal, QByteArray, Qt
-from PySide6.QtBluetooth import (QBluetoothDeviceDiscoveryAgent,
-                                 QLowEnergyController, QLowEnergyService,
-                                 QBluetoothUuid)
+from PySide6.QtBluetooth import (
+    QBluetoothDeviceDiscoveryAgent,
+    QLowEnergyController,
+    QLowEnergyService,
+    QBluetoothUuid,
+)
 from math import ceil
 
 
@@ -24,8 +27,12 @@ class SensorScanner(QObject):
         self.scanner.start()
 
     def _handle_scan_result(self):
-        polar_sensors = [d for d in self.scanner.discoveredDevices()
-                         if "Polar" in str(d.name()) and d.rssi() < 0]    # TODO: comment why rssi needs to be negative
+        # TODO: comment why rssi needs to be negative
+        polar_sensors = [
+            d
+            for d in self.scanner.discoveredDevices()
+            if "Polar" in str(d.name()) and d.rssi() < 0
+        ]
         if not polar_sensors:
             self.status_update.emit("Couldn't find sensors.")
             return
@@ -44,6 +51,7 @@ class SensorClient(QObject):
 
     In Qt terminology client=central, server=peripheral.
     """
+
     ibi_update = Signal(object)
     status_update = Signal(str)
 
@@ -62,15 +70,21 @@ class SensorClient(QObject):
 
     def connect_client(self, sensor):
         if self.client:
-            msg = f"Currently connected to sensor at {self._sensor_address()}." \
-                   " Please disconnect before (re-)connecting to (another) sensor."
+            msg = (
+                f"Currently connected to sensor at {self._sensor_address()}."
+                " Please disconnect before (re-)connecting to (another) sensor."
+            )
             self.status_update.emit(msg)
             return
-        self.status_update.emit(f"Connecting to sensor at {sensor.address().toString()}.")
+        self.status_update.emit(
+            f"Connecting to sensor at {sensor.address().toString()}."
+        )
         self.client = QLowEnergyController.createCentral(sensor)
         self.client.errorOccurred.connect(self._catch_error)
         self.client.connected.connect(self._discover_services)
-        self.client.discoveryFinished.connect(self._connect_hr_service, Qt.QueuedConnection)
+        self.client.discoveryFinished.connect(
+            self._connect_hr_service, Qt.QueuedConnection
+        )
         self.client.disconnected.connect(self._reset_connection)
         self.client.connectToDevice()
 
@@ -79,9 +93,13 @@ class SensorClient(QObject):
             if not self.hr_notification.isValid():
                 return
             print("Unsubscribing from HR service.")
-            self.hr_service.writeDescriptor(self.hr_notification, self.DISABLE_NOTIFICATION)
+            self.hr_service.writeDescriptor(
+                self.hr_notification, self.DISABLE_NOTIFICATION
+            )
         if self.client:
-            self.status_update.emit(f"Disconnecting from sensor at {self._sensor_address()}.")
+            self.status_update.emit(
+                f"Disconnecting from sensor at {self._sensor_address()}."
+            )
             self.client.disconnectFromDevice()
 
     def _discover_services(self):
@@ -94,7 +112,9 @@ class SensorClient(QObject):
             return
         self.hr_service = self.client.createServiceObject(*hr_service)
         if not self.hr_service:
-            print(f"Couldn't establish connection to HR service on {self._sensor_address()}.")
+            print(
+                f"Couldn't establish connection to HR service on {self._sensor_address()}."
+            )
             return
         self.hr_service.stateChanged.connect(self._start_hr_notification)
         self.hr_service.characteristicChanged.connect(self._data_handler)
@@ -106,7 +126,9 @@ class SensorClient(QObject):
         hr_char = self.hr_service.characteristic(self.HR_CHARACTERISTIC)
         if not hr_char.isValid():
             print(f"Couldn't find HR characterictic on {self._sensor_address()}.")
-        self.hr_notification = hr_char.descriptor(QBluetoothUuid.DescriptorType.ClientCharacteristicConfiguration)
+        self.hr_notification = hr_char.descriptor(
+            QBluetoothUuid.DescriptorType.ClientCharacteristicConfiguration
+        )
         if not self.hr_notification.isValid():
             print("HR characteristic is invalid.")
         self.hr_service.writeDescriptor(self.hr_notification, self.ENABLE_NOTIFICATION)
@@ -138,7 +160,7 @@ class SensorClient(QObject):
         self.status_update.emit(f"An error occurred: {error}. Disconnecting sensor.")
         self._reset_connection()
 
-    def _data_handler(self, characteristic, data):    # characteristic is unused but mandatory argument
+    def _data_handler(self, _, data):  # _ is unused but mandatory argument
         """
         `data` is formatted according to the
         "GATT Characteristic and Object Type 0x2A37 Heart Rate Measurement"
@@ -162,7 +184,7 @@ class SensorClient(QObject):
             One IBI is encoded by 2 consecutive bytes. Up to 18 bytes depending
             on presence of uint16 HR format and energy expenditure.
         """
-        data = data.data()    # convert from QByteArray to Python bytes
+        data = data.data()  # convert from QByteArray to Python bytes
 
         byte0 = data[0]
         uint8_format = (byte0 & 1) == 0

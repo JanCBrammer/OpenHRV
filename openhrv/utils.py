@@ -8,14 +8,18 @@ def valid_address(address):
     valid = False
     system = platform.system()
 
-    if system in ["Linux", "Windows"]:    # on MacOS devices are identified by UUID instead of MAC, hence skip the MAC validation
+    if system in ["Linux", "Windows"]:
+        # on MacOS devices are identified by UUID instead of MAC, hence skip the MAC validation
         regex = re.compile("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$")
         valid = regex.match(address.lower())
     elif system == "Darwin":
-        regex = re.compile("[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$")
+        regex = re.compile(
+            "[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        )
         valid = regex.match(address.lower())
 
     return valid
+
 
 def valid_path(path):
     """Make sure that path is valid by OS standards and that a file doesn't
@@ -24,13 +28,14 @@ def valid_path(path):
     test_path = Path(path)
 
     try:
-        test_path.touch(exist_ok=False)    # create file
-        test_path.unlink()    # remove file (only called if file doesn't exist)
+        test_path.touch(exist_ok=False)  # create file
+        test_path.unlink()  # remove file (only called if file doesn't exist)
         valid = True
-    except OSError:    # path exists or is invalid
+    except OSError:  # path exists or is invalid
         pass
 
     return valid
+
 
 def find_indices_to_average(seconds, mean_window):
     """Identify which elements need to be averaged.
@@ -54,5 +59,6 @@ def find_indices_to_average(seconds, mean_window):
     """
     mean_indices = seconds >= -mean_window
     if not sum(mean_indices):
-        mean_indices[-1] = True    # make sure that at least one element gets selected
+        # make sure that at least one element gets selected
+        mean_indices[-1] = True
     return mean_indices

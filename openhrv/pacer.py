@@ -4,7 +4,6 @@ from PySide6.QtCore import QObject
 
 
 class Pacer(QObject):
-
     def __init__(self):
         super().__init__()
 
@@ -13,7 +12,12 @@ class Pacer(QObject):
         self.sin_theta = np.sin(theta)
 
     def breathing_pattern(self, breathing_rate, time):
-        return 0.5 + 0.5 * np.sin(2 * np.pi * breathing_rate / 60 * time)    # scale such that amplitude fluctuates in [0, 1]
+        """Returns radius of pacer disk.
+
+        Radius is modulated according to sinusoidal breathing pattern
+        and scaled between 0 and 1.
+        """
+        return 0.5 + 0.5 * np.sin(2 * np.pi * breathing_rate / 60 * time)
 
     def update(self, breathing_rate):
         """Update radius of pacer disc.
