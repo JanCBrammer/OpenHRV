@@ -14,7 +14,6 @@ class Model(QObject):
     addresses_update = Signal(tuple)    # tuple(string, list)
     pacer_rate_update = Signal(tuple)    # tuple(string, float)
     hrv_target_update = Signal(tuple)    # tuple(string, int)
-    biofeedback_update = Signal(tuple)    # tuple(string, float)
 
     def __init__(self):
         super().__init__()
@@ -84,34 +83,6 @@ class Model(QObject):
         self._last_ibi_extreme = current_ibi_extreme
         self._last_ibi_phase = current_ibi_phase
 
-    def compute_biofeedback(self, x):
-        """Hill equation.
-
-        Biofeedback target (value of x at which half of the maximum reward is
-        obtained) is equivalent to K parameter.
-
-        Parameters
-        ----------
-        x : float
-            Input value.
-
-        Returns
-        -------
-        y : float
-            Biofeedback value in the range [0, 1].
-
-        References
-        ----------
-        [1] https://www.physiologyweb.com/calculators/hill_equation_interactive_graph.html
-        [2] https://en.wikipedia.org/wiki/Hill_equation_(biochemistry)
-        """
-        K = self.hrv_target * .5    # divide by half to make K the value at which maximum reward is obtained
-        Vmax = 1    # Upper limit of y values
-        n = 3    # Hill coefficient, determines steepness of curve
-        y = Vmax * x**n / (K**n + x**n)
-
-        self.biofeedback_update.emit(("Biofeedback", y))
-
     def update_hrv_buffer(self, value):
         if self._hrv_buffer[0] != -1:    # wait until buffer is full
             threshold = np.amax(self._hrv_buffer) * 4
@@ -125,7 +96,6 @@ class Model(QObject):
         self.update_mean_hrv_buffer(self._hrv_buffer[average_idcs].mean())
 
     def update_mean_hrv_buffer(self, value):
-        self.compute_biofeedback(value)
         self.mean_hrv_buffer = np.roll(self.mean_hrv_buffer, -1)
         self.mean_hrv_buffer[-1] = value
         self.mean_hrv_update.emit(("MeanHrv", (self.mean_hrv_seconds,

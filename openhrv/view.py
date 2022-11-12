@@ -163,7 +163,6 @@ class View(QMainWindow):
         self.model.addresses_update.connect(self.logger.write_to_file)
         self.model.pacer_rate_update.connect(self.logger.write_to_file)
         self.model.hrv_target_update.connect(self.logger.write_to_file)
-        self.model.biofeedback_update.connect(self.logger.write_to_file)
         self.signals.annotation.connect(self.logger.write_to_file)
 
         self.ibis_widget = XYSeriesWidget(self.model.ibis_seconds, self.model.ibis_buffer)
