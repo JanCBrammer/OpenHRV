@@ -1,0 +1,10 @@
+services:
+  app:
+    image: 'mcr.microsoft.com/vscode/devcontainers/python:3.11'
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ..:/home/app
+    network_mode: host
+    

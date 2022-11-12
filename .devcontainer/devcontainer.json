@@ -1,0 +1,27 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.187.0/containers/docker-existing-dockerfile
+
+// IMPORTANT: intended for Linux host
+{
+    "name": "OpenHRV",
+    "dockerComposeFile": [
+        "compose.yml"
+    ],
+    "service": "app",
+    "workspaceFolder": "/home/app",
+    "extensions": [
+        "ms-python.python",
+        "robbowen.synthwave-vscode",
+        "ms-python.vscode-pylance",
+        "KevinRose.vsc-python-indent",
+        "streetsidesoftware.code-spell-checker",
+        "bungcip.better-toml"
+    ],
+    "postCreateCommand": [
+        "/bin/bash",
+        ".devcontainer/install_dependencies.sh"
+    ],
+    "remoteUser": "vscode",
+    "shutdownAction": "stopCompose",
+    "overrideCommand": true
+  }
