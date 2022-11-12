@@ -22,8 +22,7 @@ class Pacer(QObject):
         precompute radii with fixed time interval) in order to compensate for
         jitter or delay in QTimer calls.
         """
-        t = time.time()
-        radius = self.breathing_pattern(breathing_rate, t)
+        radius = self.breathing_pattern(breathing_rate, time.time())
         x = radius * self.cos_theta
         y = radius * self.sin_theta
         return (x, y)
