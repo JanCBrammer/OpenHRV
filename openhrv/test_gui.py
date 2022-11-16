@@ -57,6 +57,6 @@ if __name__ == "__main__":
 
     sensor.SensorClient = MockSensorClient
     sensor.SensorScanner = MockSensorScanner
-    from OpenHRV import main
+    from openhrv.app import main
 
     main()

@@ -13,7 +13,7 @@ and run it, no installation required.
 
 ### Linux, MacOS, Windows
 
-Clone the repository and run [OpenHRV.py](https://github.com/JanCBrammer/OpenHRV/blob/main/openhrv/OpenHRV.py)
+Clone the repository and run [app.py](https://github.com/JanCBrammer/OpenHRV/blob/main/openhrv/app.py)
 in a Python environment that contains the following dependencies:
 
 * Python >= 3.10
