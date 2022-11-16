@@ -4,3 +4,4 @@ misc/
 *.spec
 build/
 dist/
+*.egg-info
