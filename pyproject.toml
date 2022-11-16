@@ -18,3 +18,8 @@ build = [
 
 [tool.black] # https://lyz-code.github.io/blue-book/devops/black/
 extend-exclude = "openhrv/resources.py"
+
+[project.scripts]
+# command line entry points
+start_openhrv = "openhrv.app:main"
+start_openhrv_test = "openhrv.test_app:main"

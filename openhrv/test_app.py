@@ -50,13 +50,22 @@ class MockSensorClient(QObject):
         self.ibi_update.emit(randrange(700, 1400))
 
 
-if __name__ == "__main__":
-    # Mock classes need to replace their mocked counterparts in namespace before the latter are imported elsewhere
-    # (https://stackoverflow.com/questions/3765222/monkey-patch-python-class).
-    from openhrv import sensor
+def main():
+    """Mock sensor classes.
+
+    Mock classes need to replace their mocked counterparts in namespace before
+    the latter are imported elsewhere:
+    https://stackoverflow.com/questions/3765222/monkey-patch-python-class
+    """
+    from openhrv import sensor  # noqa
 
     sensor.SensorClient = MockSensorClient
     sensor.SensorScanner = MockSensorScanner
-    from openhrv.app import main
 
+    from openhrv.app import main as mock_main  # noqa
+
+    mock_main()
+
+
+if __name__ == "__main__":
     main()
