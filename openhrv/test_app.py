@@ -53,7 +53,7 @@ class MockSensorClient(QObject):
 if __name__ == "__main__":
     # Mock classes need to replace their mocked counterparts in namespace before the latter are imported elsewhere
     # (https://stackoverflow.com/questions/3765222/monkey-patch-python-class).
-    import sensor
+    from openhrv import sensor
 
     sensor.SensorClient = MockSensorClient
     sensor.SensorScanner = MockSensorScanner
