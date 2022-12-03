@@ -1,17 +1,11 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/tree/v0.187.0/containers/docker-existing-dockerfile
-
 // IMPORTANT: intended for Linux host
+// https://containers.dev/implementors/json_reference/
+// https://hub.docker.com/_/microsoft-vscode-devcontainers
 {
     "name": "OpenHRV",
-    "dockerComposeFile": [
-        "compose.yml"
-    ],
-    "service": "app",
-    "workspaceFolder": "/home/app",
+    "image": "mcr.microsoft.com/vscode/devcontainers/python:3.11",
     "extensions": [
         "ms-python.python",
-        "robbowen.synthwave-vscode",
         "ms-python.vscode-pylance",
         "KevinRose.vsc-python-indent",
         "streetsidesoftware.code-spell-checker",
@@ -19,9 +13,38 @@
     ],
     "postCreateCommand": [
         "/bin/bash",
-        ".devcontainer/install_dependencies.sh"
+        ".devcontainer/post_create.sh"
     ],
-    "remoteUser": "vscode",
-    "shutdownAction": "stopCompose",
-    "overrideCommand": true
-  }
+    "postStartCommand": [
+        "/bin/bash",
+        ".devcontainer/post_start.sh"
+    ],
+    "features": {
+        "ghcr.io/devcontainers/features/desktop-lite:1": {},
+    },
+    "forwardPorts": [
+        6080
+    ],
+    "runArgs": [
+        "--net=host"
+    ],
+    "capAdd": [
+        "NET_ADMIN"
+    ]
+}
+// Setting up Bluetooth in the container:
+// * https://github.com/moby/moby/issues/16208
+// * https://medium.com/omi-uulm/how-to-run-containerized-bluetooth-applications-with-bluez-dced9ab767f6
+// * https://www.reddit.com/r/homeassistant/comments/va941x/how_do_you_guys_pass_through_bluetooth_into_the/
+// * https://stackoverflow.com/questions/28868393/accessing-bluetooth-dongle-from-inside-docker
+// * https://www.bluetooth.com/blog/the-bluetooth-for-linux-developers-study-guide/
+// * https://www.fosslinux.com/38252/how-to-disable-bluetooth-and-enable-it-on-your-linux-pc.htm
+
+// Make sure that the bluetooth service / daemon isn't running on the host before starting the container:
+// `systemclt disable bluetooth`
+// `systemclt stop bluetooth`
+// Enable bluetooth service once container stopped:
+// `systemctl enable bluetooth`
+
+// Forwarding the container's desktop to host (interact with GUI on host):
+// *https://github.com/devcontainers/features/tree/main/src/desktop-lite
