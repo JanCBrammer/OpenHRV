@@ -19,18 +19,18 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal, QObject, QTimer, QMargins, QSize
 from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient, QColor
 from PySide6.QtCharts import QChartView, QChart, QSplineSeries, QValueAxis, QAreaSeries
-from openhrv.utils import valid_address, valid_path
-from openhrv.sensor import SensorScanner, SensorClient
-from openhrv.logger import Logger
-from openhrv.pacer import Pacer
-from openhrv.config import (
+from utils import valid_address, valid_path
+from sensor import SensorScanner, SensorClient
+from logger import Logger
+from pacer import Pacer
+from config import (
     breathing_rate_to_tick,
     MEANHRV_BUFFER_SIZE,
     IBI_BUFFER_SIZE,
     MAX_BREATHING_RATE,
     MIN_BREATHING_RATE,
 )
-from openhrv import resources  # noqa
+import resources  # noqa
 
 BLUE = QColor(135, 206, 250)
 WHITE = QColor(255, 255, 255)

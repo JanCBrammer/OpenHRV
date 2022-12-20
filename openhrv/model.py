@@ -1,4 +1,4 @@
-from openhrv.config import (
+from config import (
     tick_to_breathing_rate,
     MEANHRV_BUFFER_SIZE,
     HRV_BUFFER_SIZE,
@@ -6,7 +6,7 @@ from openhrv.config import (
     MAX_BREATHING_RATE,
     HRV_MEAN_WINDOW,
 )
-from openhrv.utils import find_indices_to_average
+from utils import find_indices_to_average
 from PySide6.QtCore import QObject, Signal, Slot
 import numpy as np
 
