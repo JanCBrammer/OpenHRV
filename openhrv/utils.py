@@ -5,6 +5,7 @@ import platform
 
 def get_address_or_uuid(sensor):
     """Return MAC (Windows, Linux) or UUID (macOS)."""
+    system = platform.system()
     if system in ["Linux", "Windows"]:
         return sensor.address().toString()
     elif system == "Darwin":
