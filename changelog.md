@@ -1,5 +1,8 @@
 # Changelog
 
+### Version x.x.x (Month dd, yyyy)
++ bugfix: Changed method of running on MacOS to require pyinstaller to deal with Bluetooth permissions
+
 ### Version 0.2.0 (April 23, 2022)
 + enhancement: removed recording of Redis channels (removed Redis dependency).
 + enhancement: handling Bluetooth connection with QtBluetooth instead of bleak (removed bleak dependency).

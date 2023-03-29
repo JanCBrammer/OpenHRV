@@ -1,7 +1,7 @@
 .vscode/
 __pycache__/
 misc/
-*.spec
 build/
 dist/
 *.egg-info
+.DS_Store
