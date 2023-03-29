@@ -1,8 +1,7 @@
 # Changelog
 
-### Version 0.2.1 (Mar 28, 2023)
+### Version x.x.x (Month dd, yyyy)
 + bugfix: Changed method of running on MacOS to require pyinstaller to deal with Bluetooth permissions
-+ bugfix: Disabled address verification on MacOS because MacOS: "CoreBluetooth API hides addresses and provides unique UUIDs to identify a device." [https://doc.qt.io/qtforpython/PySide6/QtBluetooth/QBluetoothDeviceInfo.html](https://doc.qt.io/qtforpython/PySide6/QtBluetooth/QBluetoothDeviceInfo.html)
 
 ### Version 0.2.0 (April 23, 2022)
 + enhancement: removed recording of Redis channels (removed Redis dependency).
