@@ -1,4 +1,3 @@
-from sys import platform
 from datetime import datetime
 from PySide6.QtWidgets import (
     QMainWindow,
@@ -349,10 +348,7 @@ class View(QMainWindow):
         address = self.address_menu.currentText().split(",")[1].strip()
         if not valid_address(address):
             print(f"Invalid sensor address: {address}.")
-            if platform == "darwin":
-                print("Ignoring invalid sensor address on MacOS and proceeding to load.")
-            else:
-                return
+            return
         sensor = [s for s in self.model.sensors if s.address().toString() == address]
         self.sensor.connect_client(*sensor)
 
