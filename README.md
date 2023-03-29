@@ -11,7 +11,7 @@ Polar chest straps (H7, H9, H10).
 Download [OpenHRV.exe](https://github.com/JanCBrammer/OpenHRV/releases/latest)
 and run it, no installation required.
 
-### Linux, MacOS, Windows
+### Linux, Windows
 
 Clone the repository and run [app.py](https://github.com/JanCBrammer/OpenHRV/blob/main/openhrv/app.py)
 with `python -m openhrv.app` in a Python environment that contains the following dependencies:
@@ -23,6 +23,23 @@ with `python -m openhrv.app` in a Python environment that contains the following
 It is highly recommended to install these dependencies in a virtual environment,
 e.g., using [conda](https://docs.python.org/3/library/venv.html) or 
 [venv](https://docs.python.org/3/library/venv.html).
+
+### MacOS
+
+Clone the repository and run `pyinstaller app.spec --clean --noconfirm` from the project root in a Python environment that contains the following dependencies:
+
+* Python >= 3.10
+* PySide6
+* numpy
+* PyInstaller
+
+It is highly recommended to install these dependencies in a virtual environment,
+e.g., using [conda](https://docs.python.org/3/library/venv.html) or 
+[venv](https://docs.python.org/3/library/venv.html).
+
+A MacOS app bundle will be created at `OpenHRV/dist/openhrv.app`. This can be loaded directly by clicking on it, or if you wish to see terminal debug messages, you can execute from the project root `./dist/openhrv.app/Contents/MacOS/app`.
+
+The first run takes extra time. 
 
 ## User Guide
 
