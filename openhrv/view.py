@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal, QObject, QTimer, QMargins, QSize
 from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient, QColor
 from PySide6.QtCharts import QChartView, QChart, QSplineSeries, QValueAxis, QAreaSeries
-from openhrv.utils import valid_address, valid_path
+from openhrv.utils import valid_address, valid_path, get_address_or_uuid
 from openhrv.sensor import SensorScanner, SensorClient
 from openhrv.logger import Logger
 from openhrv.pacer import Pacer
@@ -349,7 +349,7 @@ class View(QMainWindow):
         if not valid_address(address):
             print(f"Invalid sensor address: {address}.")
             return
-        sensor = [s for s in self.model.sensors if s.address().toString() == address]
+        sensor = [s for s in self.model.sensors if get_address_or_uuid(s) == address]
         self.sensor.connect_client(*sensor)
 
     def disconnect_sensor(self):

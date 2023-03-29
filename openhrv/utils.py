@@ -3,6 +3,14 @@ from pathlib import Path
 import platform
 
 
+def get_address_or_uuid(sensor):
+    """Return MAC (Windows, Linux) or UUID (macOS)."""
+    if system in ["Linux", "Windows"]:
+        return sensor.address().toString()
+    elif system == "Darwin":
+        return sensor.deviceUuid().toString()
+
+
 def valid_address(address):
     """Make sure that MAC (Windows, Linux) or UUID (macOS) is valid."""
     valid = False
