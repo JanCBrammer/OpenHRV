@@ -9,7 +9,18 @@ def get_address_or_uuid(sensor):
     if system in ["Linux", "Windows"]:
         return sensor.address().toString()
     elif system == "Darwin":
-        return sensor.deviceUuid().toString()
+        return sensor.deviceUuid().toString()[1:-1]  # slice to strip off curly braces
+
+
+def get_remote_address_or_uuid(sensor):
+    """Return MAC (Windows, Linux) or UUID (macOS)."""
+    system = platform.system()
+    if system in ["Linux", "Windows"]:
+        return sensor.remoteAddress().toString()
+    elif system == "Darwin":
+        return sensor.remoteDeviceUuid().toString()[
+            1:-1
+        ]  # slice to strip off curly braces
 
 
 def valid_address(address):
@@ -23,7 +34,8 @@ def valid_address(address):
         valid = regex.match(address.lower())
     elif system == "Darwin":
         regex = re.compile(
-            "[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            # "[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$" #polar uuid not necessarily RFC4122 compliant
+            "[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$"
         )
         valid = regex.match(address.lower())
 
