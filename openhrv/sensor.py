@@ -6,7 +6,7 @@ from PySide6.QtBluetooth import (
     QBluetoothUuid,
 )
 from math import ceil
-from utils import get_address_or_uuid, get_remote_address_or_uuid
+from openhrv.utils import get_address_or_uuid, get_remote_address_or_uuid
 
 
 class SensorScanner(QObject):
