@@ -4,13 +4,21 @@
 {
     "name": "OpenHRV",
     "image": "mcr.microsoft.com/vscode/devcontainers/python:3.11",
-    "extensions": [
-        "ms-python.python",
-        "ms-python.vscode-pylance",
-        "KevinRose.vsc-python-indent",
-        "streetsidesoftware.code-spell-checker",
-        "bungcip.better-toml"
-    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "KevinRose.vsc-python-indent",
+                "streetsidesoftware.code-spell-checker",
+                "bungcip.better-toml"
+            ],
+            "settings": {
+                "editor.formatOnSave": true,
+                "python.formatting.provider": "black"
+            }
+        }
+    },
     "postCreateCommand": [
         "/bin/bash",
         ".devcontainer/post_create.sh"
@@ -19,18 +27,13 @@
         "/bin/bash",
         ".devcontainer/post_start.sh"
     ],
-    "features": {
-        "ghcr.io/devcontainers/features/desktop-lite:1": {},
-    },
-    "forwardPorts": [
-        6080
-    ],
     "runArgs": [
         "--net=host"
     ],
     "capAdd": [
         "NET_ADMIN"
-    ]
+    ],
+    "remoteUser": "root"
 }
 // Setting up Bluetooth in the container:
 // * https://github.com/moby/moby/issues/16208
@@ -39,12 +42,8 @@
 // * https://stackoverflow.com/questions/28868393/accessing-bluetooth-dongle-from-inside-docker
 // * https://www.bluetooth.com/blog/the-bluetooth-for-linux-developers-study-guide/
 // * https://www.fosslinux.com/38252/how-to-disable-bluetooth-and-enable-it-on-your-linux-pc.htm
-
 // Make sure that the bluetooth service / daemon isn't running on the host before starting the container:
 // `systemclt disable bluetooth`
 // `systemclt stop bluetooth`
 // Enable bluetooth service once container stopped:
 // `systemctl enable bluetooth`
-
-// Forwarding the container's desktop to host (interact with GUI on host):
-// *https://github.com/devcontainers/features/tree/main/src/desktop-lite
