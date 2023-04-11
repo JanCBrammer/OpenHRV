@@ -6,7 +6,7 @@ from openhrv.config import (
     MAX_BREATHING_RATE,
     HRV_MEAN_WINDOW,
 )
-from openhrv.utils import find_indices_to_average, get_address_or_uuid
+from openhrv.utils import find_indices_to_average, get_sensor_address
 from PySide6.QtCore import QObject, Signal, Slot
 import numpy as np
 
@@ -60,7 +60,7 @@ class Model(QObject):
     def update_sensors(self, sensors):
         self.sensors = sensors
         self.addresses_update.emit(
-            ("Sensors", [f"{s.name()}, {get_address_or_uuid(s)}" for s in sensors])
+            ("Sensors", [f"{s.name()}, {get_sensor_address(s)}" for s in sensors])
         )
 
     def validate_ibi(self, value):

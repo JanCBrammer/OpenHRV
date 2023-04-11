@@ -3,7 +3,7 @@ from pathlib import Path
 import platform
 
 
-def get_address_or_uuid(sensor):
+def get_sensor_address(sensor):
     """Return MAC (Windows, Linux) or UUID (macOS)."""
     system = platform.system()
     if system in ["Linux", "Windows"]:
@@ -12,7 +12,7 @@ def get_address_or_uuid(sensor):
         return sensor.deviceUuid().toString()[1:-1]  # slice to strip off curly braces
 
 
-def get_remote_address_or_uuid(sensor):
+def get_sensor_remote_address(sensor):
     """Return MAC (Windows, Linux) or UUID (macOS)."""
     system = platform.system()
     if system in ["Linux", "Windows"]:
