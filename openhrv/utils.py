@@ -3,18 +3,35 @@ from pathlib import Path
 import platform
 
 
+def get_sensor_address(sensor):
+    """Return MAC (Windows, Linux) or UUID (macOS)."""
+    system = platform.system()
+    if system in ["Linux", "Windows"]:
+        return sensor.address().toString()
+    elif system == "Darwin":
+        return sensor.deviceUuid().toString().strip("{}")
+
+
+def get_sensor_remote_address(sensor):
+    """Return MAC (Windows, Linux) or UUID (macOS)."""
+    system = platform.system()
+    if system in ["Linux", "Windows"]:
+        return sensor.remoteAddress().toString()
+    elif system == "Darwin":
+        return sensor.remoteDeviceUuid().toString().strip("{}")
+
+
 def valid_address(address):
     """Make sure that MAC (Windows, Linux) or UUID (macOS) is valid."""
     valid = False
     system = platform.system()
 
     if system in ["Linux", "Windows"]:
-        # on MacOS devices are identified by UUID instead of MAC, hence skip the MAC validation
         regex = re.compile("[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$")
         valid = regex.match(address.lower())
     elif system == "Darwin":
         regex = re.compile(
-            "[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            "[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$"  # polar uuid not necessarily RFC4122 compliant
         )
         valid = regex.match(address.lower())
 

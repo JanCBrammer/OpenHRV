@@ -6,6 +6,7 @@ from PySide6.QtBluetooth import (
     QBluetoothUuid,
 )
 from math import ceil
+from openhrv.utils import get_sensor_address, get_sensor_remote_address
 
 
 class SensorScanner(QObject):
@@ -66,7 +67,7 @@ class SensorClient(QObject):
         self.HR_CHARACTERISTIC = QBluetoothUuid.CharacteristicType.HeartRateMeasurement
 
     def _sensor_address(self):
-        return self.client.remoteAddress().toString()
+        return get_sensor_remote_address(self.client)
 
     def connect_client(self, sensor):
         if self.client:
@@ -77,7 +78,7 @@ class SensorClient(QObject):
             self.status_update.emit(msg)
             return
         self.status_update.emit(
-            f"Connecting to sensor at {sensor.address().toString()}."
+            f"Connecting to sensor at {get_sensor_address(sensor)}."
         )
         self.client = QLowEnergyController.createCentral(sensor)
         self.client.errorOccurred.connect(self._catch_error)
