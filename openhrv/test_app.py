@@ -1,18 +1,41 @@
 from PySide6.QtCore import QObject, Signal, QTimer
-from random import randrange
+from random import randrange, randint
+import uuid
+from openhrv.utils import get_sensor_address
 
 
-class MockBluetoothAddress:
+class MockBluetoothMac:
+    def __init__(self, mac):
+        self._mac = mac
+
     def toString(self):
-        return "31:41:59:26:53:58"
+        return self._mac
+
+
+class MockBluetoothUuid:
+    def __init__(self, uuid):
+        self._uuid = uuid
+
+    def toString(self):
+        return f"{self._uuid}"
 
 
 class MockSensor:
+    def __init__(self):
+        self._mac = MockBluetoothMac(
+            ":".join([f"{randint(0, 255):02x}" for _ in range(6)])
+        )
+        self._uuid = MockBluetoothUuid(uuid.uuid4())
+        self._name = "MockSensor"
+
     def name(self):
-        return "MockSensor"
+        return self._name
 
     def address(self):
-        return MockBluetoothAddress()
+        return self._mac
+
+    def deviceUuid(self):
+        return self._uuid
 
 
 class MockSensorScanner(QObject):
@@ -20,7 +43,7 @@ class MockSensorScanner(QObject):
     status_update = Signal(str)
 
     def scan(self):
-        polar_sensors = [MockSensor()]
+        polar_sensors = [MockSensor() for _ in range(3)]
         self.sensor_update.emit(polar_sensors)
         self.status_update.emit(f"Found {len(polar_sensors)} sensor(s).")
 
@@ -38,7 +61,7 @@ class MockSensorClient(QObject):
 
     def connect_client(self, sensor):
         self.status_update.emit(
-            f"Connecting to sensor at {sensor.address().toString()}."
+            f"Connecting to sensor at {get_sensor_address(sensor)}."
         )
         self.timer.start()
 
