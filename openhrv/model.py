@@ -9,16 +9,17 @@ from openhrv.config import (
 from openhrv.utils import find_indices_to_average, get_sensor_address
 from PySide6.QtCore import QObject, Signal, Slot
 import numpy as np
+from collections import namedtuple
+
+NamedSignal = namedtuple("NamedSignal", "name value")
 
 
 class Model(QObject):
-
-    # Signal format is (name, value).
-    ibis_buffer_update = Signal(tuple)  # tuple(string, tuple(np.array, np.array))
-    mean_hrv_update = Signal(tuple)  # tuple(string, tuple(np.array, np.array))
-    addresses_update = Signal(tuple)  # tuple(string, list)
-    pacer_rate_update = Signal(tuple)  # tuple(string, float)
-    hrv_target_update = Signal(tuple)  # tuple(string, int)
+    ibis_buffer_update = Signal(NamedSignal)
+    mean_hrv_update = Signal(NamedSignal)
+    addresses_update = Signal(NamedSignal)
+    pacer_rate_update = Signal(NamedSignal)
+    hrv_target_update = Signal(NamedSignal)
 
     def __init__(self):
         super().__init__()
@@ -42,25 +43,27 @@ class Model(QObject):
         self.ibis_buffer = np.roll(self.ibis_buffer, -1)
         self.ibis_buffer[-1] = self.validate_ibi(value)
         self.ibis_buffer_update.emit(
-            ("InterBeatInterval", (self.ibis_seconds, self.ibis_buffer))
+            NamedSignal("InterBeatInterval", (self.ibis_seconds, self.ibis_buffer))
         )
         self.compute_local_hrv()
 
     @Slot(float)
     def update_breathing_rate(self, value):
         self.breathing_rate = tick_to_breathing_rate(value)
-        self.pacer_rate_update.emit(("PacerRate", self.breathing_rate))
+        self.pacer_rate_update.emit(NamedSignal("PacerRate", self.breathing_rate))
 
     @Slot(int)
     def update_hrv_target(self, value):
         self.hrv_target = value
-        self.hrv_target_update.emit(("HrvTarget", value))
+        self.hrv_target_update.emit(NamedSignal("HrvTarget", value))
 
     @Slot(object)
     def update_sensors(self, sensors):
         self.sensors = sensors
         self.addresses_update.emit(
-            ("Sensors", [f"{s.name()}, {get_sensor_address(s)}" for s in sensors])
+            NamedSignal(
+                "Sensors", [f"{s.name()}, {get_sensor_address(s)}" for s in sensors]
+            )
         )
 
     def validate_ibi(self, value):
@@ -108,7 +111,7 @@ class Model(QObject):
         self.mean_hrv_buffer = np.roll(self.mean_hrv_buffer, -1)
         self.mean_hrv_buffer[-1] = value
         self.mean_hrv_update.emit(
-            ("MeanHrv", (self.mean_hrv_seconds, self.mean_hrv_buffer))
+            NamedSignal("MeanHrv", (self.mean_hrv_seconds, self.mean_hrv_buffer))
         )
 
     def update_ibis_seconds(self, value):

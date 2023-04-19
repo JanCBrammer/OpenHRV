@@ -356,25 +356,25 @@ class View(QMainWindow):
         self.sensor.disconnect_client()
 
     def plot_ibis(self, ibis):
-        self.ibis_widget.update_series(*ibis[1])
+        self.ibis_widget.update_series(*ibis.value)
 
     def plot_hrv(self, hrv):
-        self.hrv_widget.update_series(*hrv[1])
+        self.hrv_widget.update_series(*hrv.value)
 
     def list_addresses(self, addresses):
         self.address_menu.clear()
-        self.address_menu.addItems(addresses[1])
+        self.address_menu.addItems(addresses.value)
 
     def plot_pacer_disk(self):
         coordinates = self.pacer.update(self.model.breathing_rate)
         self.pacer_widget.update_series(*coordinates)
 
     def update_pacer_label(self, rate):
-        self.pacer_label.setText(f"Rate: {rate[1]}")
+        self.pacer_label.setText(f"Rate: {rate.value}")
 
     def update_hrv_target(self, target):
-        self.hrv_widget.y_axis.setRange(0, target[1])
-        self.hrv_target_label.setText(f"Target: {target[1]}")
+        self.hrv_widget.y_axis.setRange(0, target.value)
+        self.hrv_target_label.setText(f"Target: {target.value}")
 
     def toggle_pacer(self):
         visible = self.pacer_widget.isVisible()
