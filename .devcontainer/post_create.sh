@@ -7,8 +7,6 @@ pip install -e .[dev]
 # install missing dependencies for connecting to X11 server
 # https://doc.qt.io/qt-6/linux-requirements.html
 # https://doc.qt.io/qt-6/linux.html
-# install Bluetooth dependencies
-# https://wiki.debian.org/BluetoothUser
 sudo apt-get update && \
 sudo apt-get install -y build-essential \
 libgl1-mesa-dev \
@@ -36,4 +34,3 @@ libxcb-xinerama0-dev \
 libxcb-xkb-dev \
 libxkbcommon-dev \
 libxkbcommon-x11-dev \
-bluez
