@@ -19,6 +19,7 @@ libxfixes-dev \
 libxi-dev \
 libxrender-dev \
 libxcb1-dev \
+libxcb-cursor-dev \
 libxcb-glx0-dev \
 libxcb-keysyms1-dev \
 libxcb-image0-dev \
@@ -34,3 +35,4 @@ libxcb-xinerama0-dev \
 libxcb-xkb-dev \
 libxkbcommon-dev \
 libxkbcommon-x11-dev \
+libdbus-glib-1-2
