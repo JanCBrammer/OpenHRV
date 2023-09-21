@@ -1,10 +1,22 @@
-IBI_BUFFER_SIZE = 60
-HRV_BUFFER_SIZE = 10
-MEANHRV_BUFFER_SIZE = 120
+IBI_BUFFER_SIZE = 60  # samples
+HRV_BUFFER_SIZE = 10  # samples
+MEANHRV_BUFFER_SIZE = 120  # samples
 HRV_MEAN_WINDOW = 15  # seconds
+IBI_MEDIAN_WINDOW = 11  # samples
 
 MIN_BREATHING_RATE = 4  # breaths per minute
 MAX_BREATHING_RATE = 7  # breaths per minute
+
+MIN_HRV_TARGET = 50
+MAX_HRV_TARGET = 600
+
+min_heart_rate = 30
+max_heart_rate = 220
+MIN_IBI = 60_000 / max_heart_rate
+MAX_IBI = 60_000 / min_heart_rate
+
+MIN_PLOT_IBI = 300
+MAX_PLOT_IBI = 1500
 
 
 def tick_to_breathing_rate(tick):

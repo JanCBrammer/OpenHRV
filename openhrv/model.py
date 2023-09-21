@@ -4,7 +4,12 @@ from openhrv.config import (
     HRV_BUFFER_SIZE,
     IBI_BUFFER_SIZE,
     MAX_BREATHING_RATE,
+    MIN_IBI,
+    MAX_IBI,
     HRV_MEAN_WINDOW,
+    IBI_MEDIAN_WINDOW,
+    MIN_HRV_TARGET,
+    MAX_HRV_TARGET,
 )
 from openhrv.utils import find_indices_to_average, get_sensor_address
 from PySide6.QtCore import QObject, Signal, Slot
@@ -30,7 +35,7 @@ class Model(QObject):
         self.mean_hrv_seconds = np.arange(-MEANHRV_BUFFER_SIZE, 0, dtype=float)
         self.sensors = []
         self.breathing_rate = float(MAX_BREATHING_RATE)
-        self.hrv_target = 200
+        self.hrv_target = int((MIN_HRV_TARGET + MAX_HRV_TARGET) / 2)
 
         self._hrv_buffer = np.full(HRV_BUFFER_SIZE, -1, dtype=int)
         self._last_ibi_phase = -1
@@ -67,11 +72,9 @@ class Model(QObject):
         )
 
     def validate_ibi(self, value):
-        """Replace IBIs corresponding to instantaneous heart rate of more than
-        220, or less than 30 beats per minute with local median."""
-        if value < 273 or value > 2000:
+        if value < MIN_IBI or value > MAX_IBI:
             print(f"Correcting invalid IBI: {value}")
-            return np.median(self.ibis_buffer[-11:])
+            return np.median(self.ibis_buffer[-IBI_MEDIAN_WINDOW:])
         return value
 
     def compute_local_hrv(self):

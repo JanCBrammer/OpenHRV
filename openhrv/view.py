@@ -29,6 +29,10 @@ from openhrv.config import (
     IBI_BUFFER_SIZE,
     MAX_BREATHING_RATE,
     MIN_BREATHING_RATE,
+    MIN_HRV_TARGET,
+    MAX_HRV_TARGET,
+    MIN_PLOT_IBI,
+    MAX_PLOT_IBI,
 )
 from openhrv import resources  # noqa
 
@@ -192,7 +196,7 @@ class View(QMainWindow):
         self.ibis_widget.x_axis.setTickCount(7)
         self.ibis_widget.x_axis.setTickInterval(10.0)
         self.ibis_widget.y_axis.setTitleText("Inter-Beat-Interval (msec)")
-        self.ibis_widget.y_axis.setRange(300, 1500)
+        self.ibis_widget.y_axis.setRange(MIN_PLOT_IBI, MAX_PLOT_IBI)
 
         self.hrv_widget = XYSeriesWidget(
             self.model.mean_hrv_seconds, self.model.mean_hrv_buffer, WHITE
@@ -230,7 +234,7 @@ class View(QMainWindow):
         self.hrv_target_label = QLabel(f"Target: {self.model.hrv_target}")
 
         self.hrv_target = QSlider(Qt.Horizontal)
-        self.hrv_target.setRange(50, 600)
+        self.hrv_target.setRange(MIN_HRV_TARGET, MAX_HRV_TARGET)
         self.hrv_target.setSingleStep(10)
         self.hrv_target.valueChanged.connect(self.model.update_hrv_target)
         self.hrv_target.setSliderPosition(self.model.hrv_target)
