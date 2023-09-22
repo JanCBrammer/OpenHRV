@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, Signal, QByteArray, Qt
+from PySide6.QtCore import QObject, Signal, QByteArray
 from PySide6.QtBluetooth import (
     QBluetoothDeviceDiscoveryAgent,
     QLowEnergyController,
@@ -10,7 +10,6 @@ from openhrv.utils import get_sensor_address, get_sensor_remote_address
 
 
 class SensorScanner(QObject):
-
     sensor_update = Signal(object)
     status_update = Signal(str)
 
