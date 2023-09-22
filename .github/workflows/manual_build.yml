@@ -27,10 +27,10 @@ jobs:
     - name: build with pyinstaller
       shell: powershell
       run: |
-        pyinstaller --onefile --icon=docs/logo.ico openhrv/app.py
+        pyinstaller --onefile --icon=docs/logo.ico --name=OpenHRV openhrv/app.py
 
     - name: upload exe artifact
       uses: actions/upload-artifact@v3
       with:
         name: OpenHRV_windows
-        path: dist/app.exe
+        path: dist/OpenHRV.exe

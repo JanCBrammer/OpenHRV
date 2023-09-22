@@ -29,13 +29,13 @@ jobs:
     - name: build with pyinstaller
       shell: powershell
       run: |
-        pyinstaller --onefile --windowed --icon=docs/logo.ico openhrv/app.py
+        pyinstaller --onefile --windowed --icon=docs/logo.ico --name=OpenHRV openhrv/app.py
 
     - name: upload exe artifact
       uses: actions/upload-artifact@v3
       with:
         name: OpenHRV_windows
-        path: dist/app.exe
+        path: dist/OpenHRV.exe
 
   upload_windows:    # separate job on Ubuntu since JasonEtco/upload-to-release@master only runs on Linux
 
@@ -53,6 +53,6 @@ jobs:
     - name: upload exe to release
       uses: JasonEtco/upload-to-release@master
       with:
-        args: app.exe application/octet-stream
+        args: OpenHRV.exe application/octet-stream
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    # token generated implicitly
