@@ -13,10 +13,10 @@ jobs:
 
     steps:
 
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Set up Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
           python-version: "3.11"
 
@@ -32,10 +32,10 @@ jobs:
         pyinstaller --onefile --windowed --icon=docs/logo.ico openhrv/app.py
 
     - name: upload exe artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: OpenHRV_windows
-        path: dist/OpenHRV.exe
+        path: dist/app.exe
 
   upload_windows:    # separate job on Ubuntu since JasonEtco/upload-to-release@master only runs on Linux
 
@@ -46,13 +46,13 @@ jobs:
     steps:
 
     - name: download exe
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: OpenHRV_windows
 
     - name: upload exe to release
       uses: JasonEtco/upload-to-release@master
       with:
-        args: OpenHRV.exe application/octet-stream
+        args: app.exe application/octet-stream
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    # token generated implicitly
