@@ -105,14 +105,14 @@ class Model(QObject):
                 value = threshold
         self._hrv_buffer = np.roll(self._hrv_buffer, -1)
         self._hrv_buffer[-1] = value
+        self.update_mean_hrv_buffer()
+
+    def update_mean_hrv_buffer(self):
         average_idcs = find_indices_to_average(
             self.ibis_seconds[-HRV_BUFFER_SIZE:], HRV_MEAN_WINDOW
         )
-        self.update_mean_hrv_buffer(self._hrv_buffer[average_idcs].mean())
-
-    def update_mean_hrv_buffer(self, value):
         self.mean_hrv_buffer = np.roll(self.mean_hrv_buffer, -1)
-        self.mean_hrv_buffer[-1] = value
+        self.mean_hrv_buffer[-1] = self._hrv_buffer[average_idcs].mean()
         self.mean_hrv_update.emit(
             NamedSignal("MeanHrv", (self.mean_hrv_seconds, self.mean_hrv_buffer))
         )
