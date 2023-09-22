@@ -34,7 +34,7 @@ from openhrv.config import (
     MIN_PLOT_IBI,
     MAX_PLOT_IBI,
 )
-from openhrv import resources  # noqa
+from openhrv import __version__ as version, resources  # noqa
 
 BLUE = QColor(135, 206, 250)
 WHITE = QColor(255, 255, 255)
@@ -149,7 +149,7 @@ class View(QMainWindow):
     def __init__(self, model):
         super().__init__()
 
-        self.setWindowTitle("OpenHRV")
+        self.setWindowTitle(f"OpenHRV ({version})")
         self.setWindowIcon(QIcon(":/logo.png"))
 
         self.model = model
