@@ -11,6 +11,7 @@ dependencies = [
 dev = [
     "black",
     "flake8",
+    "mypy"
 ]
 build = [
     "pyinstaller"
@@ -18,6 +19,9 @@ build = [
 
 [tool.black] # https://lyz-code.github.io/blue-book/devops/black/
 extend-exclude = "openhrv/resources.py"
+
+[tool.mypy]
+check_untyped_defs = true
 
 [project.scripts]
 # command line entry points
