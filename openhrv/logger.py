@@ -1,10 +1,8 @@
-import numpy as np
 from datetime import datetime
 from PySide6.QtCore import QObject, Signal
 
 
 class Logger(QObject):
-
     recording_status = Signal(int)
     status_update = Signal(str)
 
@@ -41,7 +39,5 @@ class Logger(QObject):
             val = val[-1]
         if isinstance(val, tuple):
             val = val[-1][-1]
-        if isinstance(val, np.int32):
-            val = int(val)
         timestamp = datetime.now().isoformat()
         self.file.write(f"{key},{val},{timestamp}\n")

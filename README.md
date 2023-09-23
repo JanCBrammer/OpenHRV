@@ -14,11 +14,8 @@ and run it, no installation required.
 ### Linux, Windows
 
 Clone the repository and run [app.py](https://github.com/JanCBrammer/OpenHRV/blob/main/openhrv/app.py)
-with `python -m openhrv.app` in a Python environment that contains the following dependencies:
-
-* Python >= 3.10
-* PySide6
-* numpy
+with `python -m openhrv.app` in a Python environment that contains the dependencies specified in 
+[pyproject.toml](https://github.com/JanCBrammer/OpenHRV/blob/main/pyproject.toml)
 
 It is highly recommended to install these dependencies in a virtual environment,
 e.g., using [conda](https://docs.python.org/3/library/venv.html) or 
@@ -28,9 +25,8 @@ e.g., using [conda](https://docs.python.org/3/library/venv.html) or
 
 Clone the repository and run `pyinstaller app.spec --clean --noconfirm` from the project root in a Python environment that contains the following dependencies:
 
-* Python >= 3.10
+* Python >= 3.11
 * PySide6
-* numpy
 * PyInstaller
 
 It is highly recommended to install these dependencies in a virtual environment,

@@ -1,6 +1,10 @@
 import re
-from pathlib import Path
 import platform
+import statistics
+from pathlib import Path
+from collections import deque
+from itertools import islice
+from openhrv.config import HRV_MEAN_WINDOW, HRV_BUFFER_SIZE
 
 
 def get_sensor_address(sensor):
@@ -54,28 +58,23 @@ def valid_path(path):
     return valid
 
 
-def find_indices_to_average(seconds, mean_window):
-    """Identify which elements need to be averaged.
+def compute_mean_hrv(seconds: deque[float], hrv: deque[int]) -> float:
+    hrv_buffer_seconds = islice(seconds, len(seconds) - HRV_BUFFER_SIZE, None)
+    start_idx_mean_window = next(
+        (
+            i
+            for i, second in enumerate(hrv_buffer_seconds)
+            if second >= -HRV_MEAN_WINDOW
+        ),
+        -1,
+    )
 
-    Find the indices of those seconds that fall within the most recent
-    `mean_window` seconds.
+    return statistics.mean(islice(hrv, start_idx_mean_window, None))
 
-    Parameters
-    ----------
-    seconds : ndarray of float
-        Vector of seconds corresponding to sampling moments. Can be sampled
-        non-uniformly. The right-most element is the most recent.
-    mean_window : float
-        Average window in seconds.
 
-    Returns
-    -------
-    mean_indices : bool
-        Boolean indices indicating which elements in `seconds` need to be
-        averaged.
-    """
-    mean_indices = seconds >= -mean_window
-    if not sum(mean_indices):
-        # make sure that at least one element gets selected
-        mean_indices[-1] = True
-    return mean_indices
+def sign(value: int) -> int:
+    if value > 0:
+        return 1
+    elif value < 0:
+        return -1
+    return value

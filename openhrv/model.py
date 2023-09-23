@@ -1,3 +1,9 @@
+import statistics
+import math
+from collections import namedtuple, deque
+from itertools import islice
+from PySide6.QtCore import QObject, Signal, Slot
+from openhrv.utils import compute_mean_hrv, get_sensor_address, sign
 from openhrv.config import (
     tick_to_breathing_rate,
     MEANHRV_BUFFER_SIZE,
@@ -6,15 +12,11 @@ from openhrv.config import (
     MAX_BREATHING_RATE,
     MIN_IBI,
     MAX_IBI,
-    HRV_MEAN_WINDOW,
     IBI_MEDIAN_WINDOW,
     MIN_HRV_TARGET,
     MAX_HRV_TARGET,
 )
-from openhrv.utils import find_indices_to_average, get_sensor_address
-from PySide6.QtCore import QObject, Signal, Slot
-import numpy as np
-from collections import namedtuple
+
 
 NamedSignal = namedtuple("NamedSignal", "name value")
 
@@ -28,16 +30,23 @@ class Model(QObject):
 
     def __init__(self):
         super().__init__()
+        # Once a bounded length deque is full, when new items are added,
+        # a corresponding number of items are discarded from the opposite end.
+        self.ibis_buffer: deque[int] = deque([1000] * IBI_BUFFER_SIZE, IBI_BUFFER_SIZE)
+        self.ibis_seconds: deque[float] = deque(
+            map(float, range(-IBI_BUFFER_SIZE, 0)), IBI_BUFFER_SIZE
+        )
+        self.mean_hrv_buffer: deque[float] = deque(
+            [-1] * MEANHRV_BUFFER_SIZE, MEANHRV_BUFFER_SIZE
+        )
+        self.mean_hrv_seconds: deque[float] = deque(
+            map(float, range(-MEANHRV_BUFFER_SIZE, 0)), MEANHRV_BUFFER_SIZE
+        )
+        self._hrv_buffer: deque[int] = deque([-1] * HRV_BUFFER_SIZE, HRV_BUFFER_SIZE)
 
-        self.ibis_buffer = np.full(IBI_BUFFER_SIZE, 1000, dtype=int)
-        self.ibis_seconds = np.arange(-IBI_BUFFER_SIZE, 0, dtype=float)
-        self.mean_hrv_buffer = np.full(MEANHRV_BUFFER_SIZE, -1, dtype=int)
-        self.mean_hrv_seconds = np.arange(-MEANHRV_BUFFER_SIZE, 0, dtype=float)
         self.sensors = []
         self.breathing_rate = float(MAX_BREATHING_RATE)
         self.hrv_target = int((MIN_HRV_TARGET + MAX_HRV_TARGET) / 2)
-
-        self._hrv_buffer = np.full(HRV_BUFFER_SIZE, -1, dtype=int)
         self._last_ibi_phase = -1
         self._last_ibi_extreme = 0
         self._duration_current_phase = 0
@@ -45,8 +54,7 @@ class Model(QObject):
     @Slot(object)
     def update_ibis_buffer(self, value):
         self.update_ibis_seconds(value)
-        self.ibis_buffer = np.roll(self.ibis_buffer, -1)
-        self.ibis_buffer[-1] = self.validate_ibi(value)
+        self.ibis_buffer.append(self.validate_ibi(value))
         self.ibis_buffer_update.emit(
             NamedSignal("InterBeatInterval", (self.ibis_seconds, self.ibis_buffer))
         )
@@ -74,13 +82,17 @@ class Model(QObject):
     def validate_ibi(self, value):
         if value < MIN_IBI or value > MAX_IBI:
             print(f"Correcting invalid IBI: {value}")
-            return np.median(self.ibis_buffer[-IBI_MEDIAN_WINDOW:])
+            return statistics.median(
+                islice(
+                    self.ibis_buffer, len(self.ibis_buffer) - IBI_MEDIAN_WINDOW, None
+                )
+            )
         return value
 
     def compute_local_hrv(self):
         self._duration_current_phase += self.ibis_buffer[-1]
         # 1: IBI rises, -1: IBI falls, 0: IBI constant
-        current_ibi_phase = np.sign(self.ibis_buffer[-1] - self.ibis_buffer[-2])
+        current_ibi_phase = sign(self.ibis_buffer[-1] - self.ibis_buffer[-2])
         if current_ibi_phase == 0:
             return
         if current_ibi_phase == self._last_ibi_phase:
@@ -90,7 +102,7 @@ class Model(QObject):
         local_hrv = abs(self._last_ibi_extreme - current_ibi_extreme)
         self.update_hrv_buffer(local_hrv)
 
-        seconds_current_phase = np.ceil(self._duration_current_phase / 1000)
+        seconds_current_phase = math.ceil(self._duration_current_phase / 1000)
         self.update_mean_hrv_seconds(seconds_current_phase)
         self._duration_current_phase = 0
 
@@ -98,31 +110,31 @@ class Model(QObject):
         self._last_ibi_phase = current_ibi_phase
 
     def update_hrv_buffer(self, value):
-        if self._hrv_buffer[0] != -1:  # wait until buffer is full
-            threshold = np.amax(self._hrv_buffer) * 4
-            if value > threshold:
-                print(f"Correcting outlier HRV {value} to {threshold}")
-                value = threshold
-        self._hrv_buffer = np.roll(self._hrv_buffer, -1)
-        self._hrv_buffer[-1] = value
+        if not self._hrv_buffer[0]:
+            return  # wait until buffer is full
+        threshold = max(map(abs, self._hrv_buffer)) * 4
+        if value > threshold:
+            print(f"Correcting outlier HRV {value} to {threshold}")
+            value = threshold
+        self._hrv_buffer.append(value)
         self.update_mean_hrv_buffer()
 
     def update_mean_hrv_buffer(self):
-        average_idcs = find_indices_to_average(
-            self.ibis_seconds[-HRV_BUFFER_SIZE:], HRV_MEAN_WINDOW
+        self.mean_hrv_buffer.append(
+            compute_mean_hrv(self.ibis_seconds, self._hrv_buffer)
         )
-        self.mean_hrv_buffer = np.roll(self.mean_hrv_buffer, -1)
-        self.mean_hrv_buffer[-1] = self._hrv_buffer[average_idcs].mean()
         self.mean_hrv_update.emit(
             NamedSignal("MeanHrv", (self.mean_hrv_seconds, self.mean_hrv_buffer))
         )
 
     def update_ibis_seconds(self, value):
-        self.ibis_seconds = self.ibis_seconds - value / 1000
-        self.ibis_seconds = np.roll(self.ibis_seconds, -1)
-        self.ibis_seconds[-1] = 0
+        self.ibis_seconds = deque(
+            [i - value / 1000 for i in self.ibis_seconds], IBI_BUFFER_SIZE
+        )
+        self.ibis_seconds.append(0.0)
 
     def update_mean_hrv_seconds(self, value):
-        self.mean_hrv_seconds = self.mean_hrv_seconds - value
-        self.mean_hrv_seconds = np.roll(self.mean_hrv_seconds, -1)
-        self.mean_hrv_seconds[-1] = 0
+        self.mean_hrv_seconds = deque(
+            [i - value for i in self.mean_hrv_seconds], MEANHRV_BUFFER_SIZE
+        )
+        self.mean_hrv_seconds.append(0.0)

@@ -3,8 +3,7 @@ name = "OpenHRV"
 version = "0.2.0"
 requires-python = ">= 3.11"
 dependencies = [
-    "PySide6 == 6.5.2",
-    "numpy == 1.26.0"
+    "PySide6 == 6.5.2"
 ]
 
 [project.optional-dependencies]
