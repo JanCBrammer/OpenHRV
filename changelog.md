@@ -1,7 +1,10 @@
 # Changelog
 
-### Version x.x.x (Month dd, yyyy)
-+ bugfix: Changed method of running on MacOS to require pyinstaller to deal with Bluetooth permissions
+### Version 0.2.1 (Month dd, yyyy)
++ bugfix: Run on MacOS with PyInstaller in order to deal with Bluetooth permissions
++ enhancements: removed PyQtGraph and NumPy dependencies
++ enhancements: updated dependencies to latest version
++ enhancements: show version in GUI
 
 ### Version 0.2.0 (April 23, 2022)
 + enhancement: removed recording of Redis channels (removed Redis dependency).
@@ -16,7 +19,7 @@
 + enhancement: Status messages on application state are now displayed in the GUI.
 + enhancement: Added recording- and Redis interface features (undocumented at time of release).
 + enhancement: Rejecting some artifacts in inter-beat-intervals as well as local HRV.
-+ bugfix: Made validation of sensor addresses platform-specific (thanks to @weuthen).
++ bugfix: Made validation of sensor addresses platform-specific (thanks to Alexander Weuthen).
 
 ### Version 0.1.1 (January 13, 2021)
 + enhancement: Visibility of breathing pacer can be toggled.
