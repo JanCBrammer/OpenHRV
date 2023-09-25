@@ -6,35 +6,30 @@ A desktop application for heart rate variability (HRV) biofeedback training with
 Polar chest straps (H7, H9, H10).
 
 ## Installation
+It is highly recommended to install the project in a virtual environment,
+e.g., using [conda](https://docs.python.org/3/library/venv.html) or 
+[venv](https://docs.python.org/3/library/venv.html).
 
-### Windows
-Download [OpenHRV.exe](https://github.com/JanCBrammer/OpenHRV/releases/latest)
-and run it, no installation required.
 
 ### Linux, Windows
+On Windows, download [OpenHRV.exe](https://github.com/JanCBrammer/OpenHRV/releases/latest)
+and run it, no installation required.
 
-Clone the repository and run [app.py](https://github.com/JanCBrammer/OpenHRV/blob/main/openhrv/app.py)
+Alternatively, on both Linux and Windows you can
+clone the repository and run [app.py](https://github.com/JanCBrammer/OpenHRV/blob/main/openhrv/app.py)
 with `python -m openhrv.app` in a Python environment that contains the dependencies specified in 
 [pyproject.toml](https://github.com/JanCBrammer/OpenHRV/blob/main/pyproject.toml)
-
-It is highly recommended to install these dependencies in a virtual environment,
-e.g., using [conda](https://docs.python.org/3/library/venv.html) or 
-[venv](https://docs.python.org/3/library/venv.html).
+(`dev` or `build` dependencies are not required).
 
 ### MacOS
+:warning: Those instructions aren't verified for releases > [0.2.0](https://github.com/JanCBrammer/OpenHRV/releases/tag/v0.2.0) :warning:
 
-Clone the repository and run `pyinstaller app.spec --clean --noconfirm` from the project root in a Python environment that contains the following dependencies:
-
-* Python >= 3.11
-* PySide6
-* PyInstaller
-
-It is highly recommended to install these dependencies in a virtual environment,
-e.g., using [conda](https://docs.python.org/3/library/venv.html) or 
-[venv](https://docs.python.org/3/library/venv.html).
-
-A MacOS app bundle will be created at `OpenHRV/dist/openhrv.app`. This can be loaded directly by clicking on it, or if you wish to see terminal debug messages, you can execute from the project root `./dist/openhrv.app/Contents/MacOS/app`.
-
+Clone the repository and run `pyinstaller mac_os_app.spec --clean --noconfirm` from the project root
+in a Python environment that contains the dependencies specified in 
+[pyproject.toml](https://github.com/JanCBrammer/OpenHRV/blob/main/pyproject.toml) (including `build` dependencies).
+A MacOS app bundle will be created at `OpenHRV/dist/openhrv.app`.
+This can be loaded directly by clicking on it, or if you wish to see terminal debug messages,
+you can execute from the project root `./dist/openhrv.app/Contents/MacOS/app`.
 The first run takes extra time. 
 
 ## User Guide
