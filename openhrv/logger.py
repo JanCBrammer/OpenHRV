@@ -1,5 +1,6 @@
 from datetime import datetime
 from PySide6.QtCore import QObject, Signal
+from openhrv.utils import NamedSignal
 
 
 class Logger(QObject):
@@ -10,7 +11,7 @@ class Logger(QObject):
         super().__init__()
         self.file = None
 
-    def start_recording(self, file_path):
+    def start_recording(self, file_path: str):
         if self.file:
             self.status_update.emit(f"Already writing to a file at {self.file.name}.")
             return  # only write to one file at a time
@@ -31,7 +32,7 @@ class Logger(QObject):
         self.status_update.emit(f"Saved recording at {self.file.name}.")
         self.file = None
 
-    def write_to_file(self, data):
+    def write_to_file(self, data: NamedSignal):
         if not self.file:
             return
         key, val = data

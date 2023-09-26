@@ -3,9 +3,13 @@ from PySide6.QtBluetooth import (
     QBluetoothDeviceDiscoveryAgent,
     QLowEnergyController,
     QLowEnergyService,
+    QLowEnergyCharacteristic,
     QBluetoothUuid,
+    QBluetoothDeviceInfo,
+    QLowEnergyDescriptor,
 )
 from math import ceil
+from typing import Union
 from openhrv.utils import get_sensor_address, get_sensor_remote_address
 
 
@@ -28,7 +32,7 @@ class SensorScanner(QObject):
 
     def _handle_scan_result(self):
         # TODO: comment why rssi needs to be negative
-        polar_sensors = [
+        polar_sensors: list[QBluetoothDeviceInfo] = [
             d
             for d in self.scanner.discoveredDevices()
             if "Polar" in str(d.name()) and d.rssi() < 0
@@ -57,18 +61,22 @@ class SensorClient(QObject):
 
     def __init__(self):
         super().__init__()
-        self.client = None
-        self.hr_service = None
-        self.hr_notification = None
-        self.ENABLE_NOTIFICATION = QByteArray.fromHex(b"0100")
-        self.DISABLE_NOTIFICATION = QByteArray.fromHex(b"0000")
-        self.HR_SERVICE = QBluetoothUuid.ServiceClassUuid.HeartRate
-        self.HR_CHARACTERISTIC = QBluetoothUuid.CharacteristicType.HeartRateMeasurement
+        self.client: Union[None, QLowEnergyController] = None
+        self.hr_service: Union[None, QLowEnergyService] = None
+        self.hr_notification: Union[None, QLowEnergyDescriptor] = None
+        self.ENABLE_NOTIFICATION: QByteArray = QByteArray.fromHex(b"0100")
+        self.DISABLE_NOTIFICATION: QByteArray = QByteArray.fromHex(b"0000")
+        self.HR_SERVICE: QBluetoothUuid.ServiceClassUuid = (
+            QBluetoothUuid.ServiceClassUuid.HeartRate
+        )
+        self.HR_CHARACTERISTIC: QBluetoothUuid.CharacteristicType = (
+            QBluetoothUuid.CharacteristicType.HeartRateMeasurement
+        )
 
     def _sensor_address(self):
         return get_sensor_remote_address(self.client)
 
-    def connect_client(self, sensor):
+    def connect_client(self, sensor: QBluetoothDeviceInfo):
         if self.client:
             msg = (
                 f"Currently connected to sensor at {self._sensor_address()}."
@@ -101,14 +109,19 @@ class SensorClient(QObject):
             self.client.disconnectFromDevice()
 
     def _discover_services(self):
-        self.client.discoverServices()
+        if self.client:
+            self.client.discoverServices()
 
     def _connect_hr_service(self):
-        hr_service = [s for s in self.client.services() if s == self.HR_SERVICE]
+        if not self.client:
+            return
+        hr_service: list[QBluetoothUuid] = [
+            s for s in self.client.services() if s == self.HR_SERVICE
+        ]
         if not hr_service:
             print(f"Couldn't find HR service on {self._sensor_address()}.")
             return
-        self.hr_service = self.client.createServiceObject(*hr_service)
+        self.hr_service = self.client.createServiceObject(hr_service[0])
         if not self.hr_service:
             print(
                 f"Couldn't establish connection to HR service on {self._sensor_address()}."
@@ -118,10 +131,14 @@ class SensorClient(QObject):
         self.hr_service.characteristicChanged.connect(self._data_handler)
         self.hr_service.discoverDetails()
 
-    def _start_hr_notification(self, state):
+    def _start_hr_notification(self, state: QLowEnergyService.ServiceState):
         if state != QLowEnergyService.RemoteServiceDiscovered:
             return
-        hr_char = self.hr_service.characteristic(self.HR_CHARACTERISTIC)
+        if not self.hr_service:
+            return
+        hr_char: QLowEnergyCharacteristic = self.hr_service.characteristic(
+            self.HR_CHARACTERISTIC
+        )
         if not hr_char.isValid():
             print(f"Couldn't find HR characterictic on {self._sensor_address()}.")
         self.hr_notification = hr_char.descriptor(
@@ -137,6 +154,8 @@ class SensorClient(QObject):
         self._remove_client()
 
     def _remove_service(self):
+        if not self.hr_service:
+            return
         try:
             self.hr_service.deleteLater()
         except Exception as e:
@@ -146,6 +165,8 @@ class SensorClient(QObject):
             self.hr_notification = None
 
     def _remove_client(self):
+        if not self.client:
+            return
         try:
             self.client.disconnected.disconnect()
             self.client.deleteLater()
@@ -158,7 +179,7 @@ class SensorClient(QObject):
         self.status_update.emit(f"An error occurred: {error}. Disconnecting sensor.")
         self._reset_connection()
 
-    def _data_handler(self, _, data):  # _ is unused but mandatory argument
+    def _data_handler(self, _, data: QByteArray):  # _ is unused but mandatory argument
         """
         `data` is formatted according to the
         "GATT Characteristic and Object Type 0x2A37 Heart Rate Measurement"
@@ -182,17 +203,17 @@ class SensorClient(QObject):
             One IBI is encoded by 2 consecutive bytes. Up to 18 bytes depending
             on presence of uint16 HR format and energy expenditure.
         """
-        data = data.data()  # convert from QByteArray to Python bytes
+        heart_rate_measurement_bytes: bytes = data.data()
 
-        byte0 = data[0]
-        uint8_format = (byte0 & 1) == 0
-        energy_expenditure = ((byte0 >> 3) & 1) == 1
-        rr_interval = ((byte0 >> 4) & 1) == 1
+        byte0: int = heart_rate_measurement_bytes[0]
+        uint8_format: bool = (byte0 & 1) == 0
+        energy_expenditure: bool = ((byte0 >> 3) & 1) == 1
+        rr_interval: bool = ((byte0 >> 4) & 1) == 1
 
         if not rr_interval:
             return
 
-        first_rr_byte = 2
+        first_rr_byte: int = 2
         if uint8_format:
             # hr = data[1]
             pass
@@ -203,8 +224,10 @@ class SensorClient(QObject):
             # ee = (data[first_rr_byte + 1] << 8) | data[first_rr_byte]
             first_rr_byte += 2
 
-        for i in range(first_rr_byte, len(data), 2):
-            ibi = (data[i + 1] << 8) | data[i]
+        for i in range(first_rr_byte, len(heart_rate_measurement_bytes), 2):
+            ibi: int = (
+                heart_rate_measurement_bytes[i + 1] << 8
+            ) | heart_rate_measurement_bytes[i]
             # Polar H7, H9, and H10 record IBIs in 1/1024 seconds format.
             # Convert 1/1024 sec format to milliseconds.
             # TODO: move conversion to model and only convert if sensor doesn't

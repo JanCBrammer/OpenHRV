@@ -50,7 +50,7 @@ class MockSensorScanner(QObject):
 
 class MockSensorClient(QObject):
     ibi_update = Signal(object)
-    status_update = Signal(object)
+    status_update = Signal(str)
 
     def __init__(self):
         super().__init__()

@@ -19,10 +19,13 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal, QObject, QTimer, QMargins, QSize
 from PySide6.QtGui import QIcon, QLinearGradient, QBrush, QGradient, QColor
 from PySide6.QtCharts import QChartView, QChart, QSplineSeries, QValueAxis, QAreaSeries
-from openhrv.utils import valid_address, valid_path, get_sensor_address
+from PySide6.QtBluetooth import QBluetoothDeviceInfo
+from typing import Iterable
+from openhrv.utils import valid_address, valid_path, get_sensor_address, NamedSignal
 from openhrv.sensor import SensorScanner, SensorClient
 from openhrv.logger import Logger
 from openhrv.pacer import Pacer
+from openhrv.model import Model
 from openhrv.config import (
     breathing_rate_to_tick,
     MEANHRV_BUFFER_SIZE,
@@ -44,7 +47,9 @@ RED = QColor(255, 0, 0)
 
 
 class PacerWidget(QChartView):
-    def __init__(self, x_values=None, y_values=None, color=BLUE):
+    def __init__(
+        self, x_values: Iterable[float], y_values: Iterable[float], color: QColor = BLUE
+    ):
         super().__init__()
 
         self.setSizePolicy(
@@ -60,8 +65,7 @@ class PacerWidget(QChartView):
         self.plot.setMargins(QMargins(0, 0, 0, 0))
 
         self.disc_circumference_coord = QSplineSeries()
-        if x_values is not None and y_values is not None:
-            self._instantiate_series(x_values, y_values)
+        self._instantiate_series(x_values, y_values)
         self.disk = QAreaSeries(self.disc_circumference_coord)
         self.disk.setColor(color)
         self.plot.addSeries(self.disk)
@@ -80,11 +84,11 @@ class PacerWidget(QChartView):
 
         self.setChart(self.plot)
 
-    def _instantiate_series(self, x_values, y_values):
+    def _instantiate_series(self, x_values: Iterable[float], y_values: Iterable[float]):
         for x, y in zip(x_values, y_values):
             self.disc_circumference_coord.append(x, y)
 
-    def update_series(self, x_values, y_values):
+    def update_series(self, x_values: Iterable[float], y_values: Iterable[float]):
         for i, (x, y) in enumerate(zip(x_values, y_values)):
             self.disc_circumference_coord.replace(i, x, y)
 
@@ -99,7 +103,12 @@ class PacerWidget(QChartView):
 
 
 class XYSeriesWidget(QChartView):
-    def __init__(self, x_values=None, y_values=None, line_color=BLUE):
+    def __init__(
+        self,
+        x_values: Iterable[float],
+        y_values: Iterable[float],
+        line_color: QColor = BLUE,
+    ):
         super().__init__()
 
         self.plot = QChart()
@@ -113,8 +122,7 @@ class XYSeriesWidget(QChartView):
         pen.setWidth(4)
         pen.setColor(line_color)
         self.time_series.setPen(pen)
-        if x_values is not None and y_values is not None:
-            self._instantiate_series(x_values, y_values)
+        self._instantiate_series(x_values, y_values)
 
         self.x_axis = QValueAxis()
         self.x_axis.setLabelFormat("%i")
@@ -128,11 +136,11 @@ class XYSeriesWidget(QChartView):
 
         self.setChart(self.plot)
 
-    def _instantiate_series(self, x_values, y_values):
+    def _instantiate_series(self, x_values: Iterable[float], y_values: Iterable[float]):
         for x, y in zip(x_values, y_values):
             self.time_series.append(x, y)
 
-    def update_series(self, x_values, y_values):
+    def update_series(self, x_values: Iterable[float], y_values: Iterable[float]):
         for i, (x, y) in enumerate(zip(x_values, y_values)):
             self.time_series.replace(i, x, y)
 
@@ -146,7 +154,7 @@ class ViewSignals(QObject):
 
 
 class View(QMainWindow):
-    def __init__(self, model):
+    def __init__(self, model: Model):
         super().__init__()
 
         self.setWindowTitle(f"OpenHRV ({version})")
@@ -163,7 +171,7 @@ class View(QMainWindow):
 
         self.pacer = Pacer()
         self.pacer_timer = QTimer()
-        self.pacer_timer.setInterval(1 / 8 * 1000)  # redraw pacer at 8Hz
+        self.pacer_timer.setInterval(int(1 / 8 * 1000))  # redraw pacer at 8Hz
         self.pacer_timer.timeout.connect(self.plot_pacer_disk)
 
         self.scanner = SensorScanner()
@@ -320,7 +328,7 @@ class View(QMainWindow):
         self.logger_thread.start()
         self.pacer_timer.start()
 
-    def closeEvent(self, event):
+    def closeEvent(self, _):
         """Shut down all threads."""
         print("Closing threads...")
 
@@ -330,10 +338,10 @@ class View(QMainWindow):
         self.logger_thread.wait()
 
     def get_filepath(self):
-        current_time = datetime.now().strftime("%Y-%m-%d-%H-%M")
-        default_file_name = f"OpenHRV_{current_time}.csv"
+        current_time: str = datetime.now().strftime("%Y-%m-%d-%H-%M")
+        default_file_name: str = f"OpenHRV_{current_time}.csv"
         # native file dialog not reliable on Windows (most likely COM issues)
-        file_path = QFileDialog.getSaveFileName(
+        file_path: str = QFileDialog.getSaveFileName(
             None,
             "Create file",
             default_file_name,
@@ -350,23 +358,25 @@ class View(QMainWindow):
         if not self.address_menu.currentText():
             return
         # discard device name
-        address = self.address_menu.currentText().split(",")[1].strip()
+        address: str = self.address_menu.currentText().split(",")[1].strip()
         if not valid_address(address):
             print(f"Invalid sensor address: {address}.")
             return
-        sensor = [s for s in self.model.sensors if get_sensor_address(s) == address]
+        sensor: list[QBluetoothDeviceInfo] = [
+            s for s in self.model.sensors if get_sensor_address(s) == address
+        ]
         self.sensor.connect_client(*sensor)
 
     def disconnect_sensor(self):
         self.sensor.disconnect_client()
 
-    def plot_ibis(self, ibis):
+    def plot_ibis(self, ibis: NamedSignal):
         self.ibis_widget.update_series(*ibis.value)
 
-    def plot_hrv(self, hrv):
+    def plot_hrv(self, hrv: NamedSignal):
         self.hrv_widget.update_series(*hrv.value)
 
-    def list_addresses(self, addresses):
+    def list_addresses(self, addresses: NamedSignal):
         self.address_menu.clear()
         self.address_menu.addItems(addresses.value)
 
@@ -374,10 +384,10 @@ class View(QMainWindow):
         coordinates = self.pacer.update(self.model.breathing_rate)
         self.pacer_widget.update_series(*coordinates)
 
-    def update_pacer_label(self, rate):
+    def update_pacer_label(self, rate: NamedSignal):
         self.pacer_label.setText(f"Rate: {rate.value}")
 
-    def update_hrv_target(self, target):
+    def update_hrv_target(self, target: NamedSignal):
         self.hrv_widget.y_axis.setRange(0, target.value)
         self.hrv_target_label.setText(f"Target: {target.value}")
 
@@ -385,14 +395,16 @@ class View(QMainWindow):
         visible = self.pacer_widget.isVisible()
         self.pacer_widget.setVisible(not visible)
 
-    def show_recording_status(self, status):
+    def show_recording_status(self, status: int):
         """Indicate busy state if `status` is 0."""
         self.recording_statusbar.setRange(0, status)
 
-    def show_status(self, status, print_to_terminal=True):
+    def show_status(self, status: str, print_to_terminal=True):
         self.statusbar.showMessage(status, 0)
         if print_to_terminal:
             print(status)
 
     def emit_annotation(self):
-        self.signals.annotation.emit(("Annotation", self.annotation.currentText()))
+        self.signals.annotation.emit(
+            NamedSignal("Annotation", self.annotation.currentText())
+        )
