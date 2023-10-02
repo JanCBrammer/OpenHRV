@@ -4,7 +4,7 @@ from collections import deque
 from itertools import islice
 from PySide6.QtCore import QObject, Signal, Slot
 from PySide6.QtBluetooth import QBluetoothDeviceInfo
-from openhrv.utils import compute_mean_hrv, get_sensor_address, sign, NamedSignal
+from openhrv.utils import get_sensor_address, sign, NamedSignal
 from openhrv.config import (
     tick_to_breathing_rate,
     MEANHRV_BUFFER_SIZE,
@@ -16,6 +16,7 @@ from openhrv.config import (
     IBI_MEDIAN_WINDOW,
     MIN_HRV_TARGET,
     MAX_HRV_TARGET,
+    HRV_MEAN_WINDOW,
 )
 
 
@@ -118,8 +119,18 @@ class Model(QObject):
         self.update_mean_hrv_buffer()
 
     def update_mean_hrv_buffer(self):
+        seconds = self.ibis_seconds
+        hrv_buffer_seconds = islice(seconds, len(seconds) - HRV_BUFFER_SIZE, None)
+        start_idx_mean_window = next(
+            (
+                i
+                for i, second in enumerate(hrv_buffer_seconds)
+                if second >= -HRV_MEAN_WINDOW
+            ),
+            -1,
+        )
         self.mean_hrv_buffer.append(
-            compute_mean_hrv(self.ibis_seconds, self._hrv_buffer)
+            statistics.mean(islice(self._hrv_buffer, start_idx_mean_window, None))
         )
         self.mean_hrv_update.emit(
             NamedSignal("MeanHrv", (self.mean_hrv_seconds, self.mean_hrv_buffer))

@@ -1,11 +1,8 @@
 import re
 import platform
-import statistics
 from pathlib import Path
-from collections import deque, namedtuple
-from itertools import islice
+from collections import namedtuple
 from PySide6.QtBluetooth import QBluetoothDeviceInfo
-from openhrv.config import HRV_MEAN_WINDOW, HRV_BUFFER_SIZE
 
 
 NamedSignal = namedtuple("NamedSignal", "name value")
@@ -60,20 +57,6 @@ def valid_path(path: str) -> bool:
         pass
 
     return valid
-
-
-def compute_mean_hrv(seconds: deque[float], hrv: deque[int]) -> float:
-    hrv_buffer_seconds = islice(seconds, len(seconds) - HRV_BUFFER_SIZE, None)
-    start_idx_mean_window = next(
-        (
-            i
-            for i, second in enumerate(hrv_buffer_seconds)
-            if second >= -HRV_MEAN_WINDOW
-        ),
-        -1,
-    )
-
-    return statistics.mean(islice(hrv, start_idx_mean_window, None))
 
 
 def sign(value: int) -> int:
