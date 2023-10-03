@@ -55,8 +55,9 @@ class MockSensorClient(QObject):
     def __init__(self):
         super().__init__()
 
+        self.mean_ibi = 500
         self.timer = QTimer()
-        self.timer.setInterval(1000)
+        self.timer.setInterval(self.mean_ibi)
         self.timer.timeout.connect(self.simulate_ibi)
 
     def connect_client(self, sensor):
@@ -70,7 +71,7 @@ class MockSensorClient(QObject):
         self.timer.stop()
 
     def simulate_ibi(self):
-        self.ibi_update.emit(randrange(700, 1400))
+        self.ibi_update.emit(randrange(self.mean_ibi - 200, self.mean_ibi + 200))
 
 
 def main():
