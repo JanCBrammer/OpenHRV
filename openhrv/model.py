@@ -33,13 +33,13 @@ class Model(QObject):
         # a corresponding number of items are discarded from the opposite end.
         self.ibis_buffer: deque[int] = deque([1000] * IBI_BUFFER_SIZE, IBI_BUFFER_SIZE)
         self.ibis_seconds: deque[float] = deque(
-            map(float, range(-IBI_BUFFER_SIZE, 0)), IBI_BUFFER_SIZE
+            map(float, range(-IBI_BUFFER_SIZE, 1)), IBI_BUFFER_SIZE
         )
         self.mean_hrv_buffer: deque[float] = deque(
             [-1] * MEANHRV_BUFFER_SIZE, MEANHRV_BUFFER_SIZE
         )
         self.mean_hrv_seconds: deque[float] = deque(
-            map(float, range(-MEANHRV_BUFFER_SIZE, 0)), MEANHRV_BUFFER_SIZE
+            map(float, range(-MEANHRV_BUFFER_SIZE, 1)), MEANHRV_BUFFER_SIZE
         )
         self._hrv_buffer: deque[int] = deque([-1] * HRV_BUFFER_SIZE, HRV_BUFFER_SIZE)
 
