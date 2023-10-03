@@ -1,9 +1,6 @@
 from typing import Final
 from math import ceil
 
-IBI_BUFFER_SIZE: Final[int] = 60  # samples
-HRV_BUFFER_SIZE: Final[int] = 10  # samples
-MEANHRV_BUFFER_SIZE: Final[int] = 120  # samples
 
 HRV_MEAN_WINDOW: Final[float] = 15.0  # seconds
 IBI_MEDIAN_WINDOW: Final[int] = 11  # samples
@@ -18,6 +15,17 @@ MIN_IBI: Final[int] = ceil(60_000 / max_heart_rate)
 MAX_IBI: Final[int] = ceil(60_000 / min_heart_rate)
 MIN_PLOT_IBI: Final[int] = 300
 MAX_PLOT_IBI: Final[int] = 1500
+
+
+HRV_BUFFER_SIZE: Final[int] = 10  # samples
+# IBI buffer must hold enough samples such that even if IBIs (on average) were
+# MIN_IBI long, there'd be enough samples to display for IBI_HISTORY_DURATION seconds.
+IBI_HISTORY_DURATION: Final[int] = 60  # seconds
+IBI_BUFFER_SIZE: Final[int] = ceil(IBI_HISTORY_DURATION / (MIN_IBI / 1000))  # samples
+MEANHRV_HISTORY_DURATION: Final[int] = 120  # seconds
+MEANHRV_BUFFER_SIZE: Final[int] = ceil(
+    MEANHRV_HISTORY_DURATION / (MIN_IBI / 1000)
+)  # samples
 
 
 def tick_to_breathing_rate(tick: int) -> float:

@@ -28,8 +28,8 @@ from openhrv.pacer import Pacer
 from openhrv.model import Model
 from openhrv.config import (
     breathing_rate_to_tick,
-    MEANHRV_BUFFER_SIZE,
-    IBI_BUFFER_SIZE,
+    MEANHRV_HISTORY_DURATION,
+    IBI_HISTORY_DURATION,
     MAX_BREATHING_RATE,
     MIN_BREATHING_RATE,
     MIN_HRV_TARGET,
@@ -201,7 +201,10 @@ class View(QMainWindow):
             self.model.ibis_seconds, self.model.ibis_buffer
         )
         self.ibis_widget.x_axis.setTitleText("Seconds")
-        self.ibis_widget.x_axis.setRange(-IBI_BUFFER_SIZE, 0.0)
+        # The time series displays only the samples within the last
+        # IBI_HISTORY_DURATION seconds,
+        # even though there are more samples in self.model.ibis_seconds.
+        self.ibis_widget.x_axis.setRange(-IBI_HISTORY_DURATION, 0.0)
         self.ibis_widget.x_axis.setTickCount(7)
         self.ibis_widget.x_axis.setTickInterval(10.0)
         self.ibis_widget.y_axis.setTitleText("Inter-Beat-Interval (msec)")
@@ -211,7 +214,10 @@ class View(QMainWindow):
             self.model.mean_hrv_seconds, self.model.mean_hrv_buffer, WHITE
         )
         self.hrv_widget.x_axis.setTitleText("Seconds")
-        self.hrv_widget.x_axis.setRange(-MEANHRV_BUFFER_SIZE, 0)
+        # The time series displays only the samples within the last
+        # MEANHRV_HISTORY_DURATION seconds,
+        # even though there are more samples in self.model.mean_hrv_seconds.
+        self.hrv_widget.x_axis.setRange(-MEANHRV_HISTORY_DURATION, 0)
         self.hrv_widget.y_axis.setTitleText("HRV (msec)")
         self.hrv_widget.y_axis.setRange(0, self.model.hrv_target)
         colorgrad = QLinearGradient(0, 0, 0, 1)  # horizontal gradient
