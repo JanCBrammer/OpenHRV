@@ -52,8 +52,9 @@ class Model(QObject):
 
     @Slot(int)
     def update_ibis_buffer(self, ibi: int):
-        self.update_ibis_seconds(ibi / 1000)
-        self.ibis_buffer.append(self.validate_ibi(ibi))
+        validated_ibi = self.validate_ibi(ibi)
+        self.update_ibis_seconds(validated_ibi / 1000)
+        self.ibis_buffer.append(validated_ibi)
         self.ibis_buffer_update.emit(
             NamedSignal("InterBeatInterval", (self.ibis_seconds, self.ibis_buffer))
         )
@@ -78,15 +79,27 @@ class Model(QObject):
             )
         )
 
-    def validate_ibi(self, ibi: int):
+    def validate_ibi(self, ibi: int) -> int:
+        validated_ibi = ibi
         if ibi < MIN_IBI or ibi > MAX_IBI:
-            print(f"Correcting invalid IBI: {ibi}")
-            return statistics.median(
-                islice(
-                    self.ibis_buffer, len(self.ibis_buffer) - IBI_MEDIAN_WINDOW, None
+            median_ibi = math.ceil(
+                statistics.median(
+                    islice(
+                        self.ibis_buffer,
+                        len(self.ibis_buffer) - IBI_MEDIAN_WINDOW,
+                        None,
+                    )
                 )
             )
-        return ibi
+            if median_ibi < MIN_IBI:
+                validated_ibi = MIN_IBI
+            elif median_ibi > MAX_IBI:
+                validated_ibi = MAX_IBI
+            else:
+                validated_ibi = median_ibi
+            print(f"Correcting invalid IBI: {ibi} to {validated_ibi}")
+
+        return validated_ibi
 
     def compute_local_hrv(self):
         self._duration_current_phase += self.ibis_buffer[-1]
