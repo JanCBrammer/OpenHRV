@@ -10,7 +10,8 @@ dependencies = [
 dev = [
     "black",
     "flake8",
-    "mypy"
+    "mypy",
+    "snakeviz"
 ]
 build = [
     "pyinstaller"

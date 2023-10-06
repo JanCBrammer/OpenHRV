@@ -4,4 +4,5 @@ misc/
 build/
 dist/
 *.egg-info
+*.profile
 .DS_Store
