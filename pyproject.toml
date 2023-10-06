@@ -25,4 +25,3 @@ check_untyped_defs = true
 [project.scripts]
 # command line entry points
 start_openhrv = "openhrv.app:main"
-start_openhrv_test = "openhrv.test_app:main"
