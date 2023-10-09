@@ -8,18 +8,21 @@
             "extensions": [
                 "ms-python.python",
                 "ms-python.vscode-pylance",
+                "ms-python.black-formatter",
+                "ms-python.mypy-type-checker",
+                "ms-python.flake8",
                 "KevinRose.vsc-python-indent",
                 "streetsidesoftware.code-spell-checker",
-                "bungcip.better-toml",
+                "tamasfe.even-better-toml",
                 "eamodio.gitlens"
             ],
             "settings": {
                 "editor.formatOnSave": true,
-                "editor.formatOnSaveMode": "file",
-                "python.formatting.provider": "black",
-                "python.testing.unittestEnabled": false,
-                "python.testing.pytestEnabled": true,
-                "python.linting.mypyEnabled": true
+                "python": {
+                    "editor.defaultFormatter": "ms-python.black-formatter",
+                    "testing.unittestEnabled": false,
+                    "testing.pytestEnabled": true
+                }
             }
         }
     },
