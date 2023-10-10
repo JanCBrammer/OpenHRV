@@ -1,6 +1,8 @@
-from PySide6.QtCore import QObject, Signal, QTimer
-from random import randrange, randint
+import math
+import time
 import uuid
+from random import randint
+from PySide6.QtCore import QObject, Signal, QTimer
 from openhrv.utils import get_sensor_address
 
 
@@ -54,8 +56,9 @@ class MockSensorClient(QObject):
 
     def __init__(self):
         super().__init__()
-
-        self.mean_ibi = 500
+        # Polar sensor emits a (package of) IBI(s) about every second.
+        # Here we "emit" / simulate IBI(s) in quicker succession in order to push the rendering.
+        self.mean_ibi = 300
         self.timer = QTimer()
         self.timer.setInterval(self.mean_ibi)
         self.timer.timeout.connect(self.simulate_ibi)
@@ -71,7 +74,15 @@ class MockSensorClient(QObject):
         self.timer.stop()
 
     def simulate_ibi(self):
-        self.ibi_update.emit(randrange(self.mean_ibi - 200, self.mean_ibi + 200))
+        # IBIs fluctuate at a rate of `breathing_rate`
+        # in a sinusoidal pattern around `mean_ibi`,
+        # in a range of `range_ibi`.
+        breathing_rate = 6
+        range_ibi = 40  # HRV must settle at this value
+        ibi = self.mean_ibi + (range_ibi / 2) * math.sin(
+            2 * math.pi * breathing_rate / 60 * time.time()
+        )
+        self.ibi_update.emit(ibi)
 
 
 def main():
