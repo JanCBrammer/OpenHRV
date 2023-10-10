@@ -28,7 +28,7 @@ from openhrv.pacer import Pacer
 from openhrv.model import Model
 from openhrv.config import (
     breathing_rate_to_tick,
-    MEANHRV_HISTORY_DURATION,
+    HRV_HISTORY_DURATION,
     IBI_HISTORY_DURATION,
     MAX_BREATHING_RATE,
     MIN_BREATHING_RATE,
@@ -162,7 +162,7 @@ class View(QMainWindow):
 
         self.model = model
         self.model.ibis_buffer_update.connect(self.plot_ibis)
-        self.model.mean_hrv_update.connect(self.plot_hrv)
+        self.model.hrv_update.connect(self.plot_hrv)
         self.model.addresses_update.connect(self.list_addresses)
         self.model.pacer_rate_update.connect(self.update_pacer_label)
         self.model.hrv_target_update.connect(self.update_hrv_target)
@@ -194,7 +194,7 @@ class View(QMainWindow):
         self.model.addresses_update.connect(self.logger.write_to_file)
         self.model.pacer_rate_update.connect(self.logger.write_to_file)
         self.model.hrv_target_update.connect(self.logger.write_to_file)
-        self.model.mean_hrv_update.connect(self.logger.write_to_file)
+        self.model.hrv_update.connect(self.logger.write_to_file)
         self.signals.annotation.connect(self.logger.write_to_file)
 
         self.ibis_widget = XYSeriesWidget(
@@ -211,13 +211,13 @@ class View(QMainWindow):
         self.ibis_widget.y_axis.setRange(MIN_PLOT_IBI, MAX_PLOT_IBI)
 
         self.hrv_widget = XYSeriesWidget(
-            self.model.mean_hrv_seconds, self.model.mean_hrv_buffer, WHITE
+            self.model.hrv_seconds, self.model.hrv_buffer, WHITE
         )
         self.hrv_widget.x_axis.setTitleText("Seconds")
         # The time series displays only the samples within the last
-        # MEANHRV_HISTORY_DURATION seconds,
-        # even though there are more samples in self.model.mean_hrv_seconds.
-        self.hrv_widget.x_axis.setRange(-MEANHRV_HISTORY_DURATION, 0)
+        # HRV_HISTORY_DURATION seconds,
+        # even though there are more samples in self.model.hrv_seconds.
+        self.hrv_widget.x_axis.setRange(-HRV_HISTORY_DURATION, 0)
         self.hrv_widget.y_axis.setTitleText("HRV (msec)")
         self.hrv_widget.y_axis.setRange(0, self.model.hrv_target)
         colorgrad = QLinearGradient(0, 0, 0, 1)  # horizontal gradient

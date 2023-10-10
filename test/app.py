@@ -58,7 +58,7 @@ class MockSensorClient(QObject):
         super().__init__()
         # Polar sensor emits a (package of) IBI(s) about every second.
         # Here we "emit" / simulate IBI(s) in quicker succession in order to push the rendering.
-        self.mean_ibi = 300
+        self.mean_ibi = 900
         self.timer = QTimer()
         self.timer.setInterval(self.mean_ibi)
         self.timer.timeout.connect(self.simulate_ibi)
@@ -78,10 +78,16 @@ class MockSensorClient(QObject):
         # in a sinusoidal pattern around `mean_ibi`,
         # in a range of `range_ibi`.
         breathing_rate = 6
-        range_ibi = 40  # HRV must settle at this value
+        range_ibi = 100  # without noise, HRV settles at this value
         ibi = self.mean_ibi + (range_ibi / 2) * math.sin(
             2 * math.pi * breathing_rate / 60 * time.time()
         )
+        # add noise spikes
+        if randint(1, 30) == 1:
+            if randint(1, 2) == 1:
+                ibi += 500
+            else:
+                ibi -= 500
         self.ibi_update.emit(ibi)
 
 

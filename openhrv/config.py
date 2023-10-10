@@ -2,8 +2,10 @@ from typing import Final
 from math import ceil
 
 
-HRV_MEAN_WINDOW: Final[float] = 15.0  # seconds
 IBI_MEDIAN_WINDOW: Final[int] = 11  # samples
+EWMA_WEIGHT_CURRENT_SAMPLE: Final[float] = (
+    0.1  # set in range [0, 1], 1 being minimal smoothing, see https://en.wikipedia.org/wiki/Exponential_smoothing
+)
 
 MIN_BREATHING_RATE: Final[float] = 4.0  # breaths per minute
 MAX_BREATHING_RATE: Final[float] = 7.0  # breaths per minute
@@ -16,16 +18,12 @@ MAX_IBI: Final[int] = ceil(60_000 / min_heart_rate)
 MIN_PLOT_IBI: Final[int] = 300
 MAX_PLOT_IBI: Final[int] = 1500
 
-
-HRV_BUFFER_SIZE: Final[int] = 10  # samples
 # IBI buffer must hold enough samples such that even if IBIs (on average) were
 # MIN_IBI long, there'd be enough samples to display for IBI_HISTORY_DURATION seconds.
 IBI_HISTORY_DURATION: Final[int] = 60  # seconds
 IBI_BUFFER_SIZE: Final[int] = ceil(IBI_HISTORY_DURATION / (MIN_IBI / 1000))  # samples
-MEANHRV_HISTORY_DURATION: Final[int] = 120  # seconds
-MEANHRV_BUFFER_SIZE: Final[int] = ceil(
-    MEANHRV_HISTORY_DURATION / (MIN_IBI / 1000)
-)  # samples
+HRV_HISTORY_DURATION: Final[int] = 120  # seconds
+HRV_BUFFER_SIZE: Final[int] = ceil(HRV_HISTORY_DURATION / (MIN_IBI / 1000))  # samples
 
 COMPATIBLE_SENSORS: Final[list[str]] = ["Polar", "Decathlon Dual HR"]
 
