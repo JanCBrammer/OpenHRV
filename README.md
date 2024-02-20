@@ -6,7 +6,7 @@ A desktop application for heart rate variability (HRV) biofeedback training with
 Polar chest straps (H7, H9, H10).
 
 ## Installation
-It is highly recommended to install the project in a virtual environment,
+It is highly recommended to install the project in a virtual Python environment,
 e.g., using [conda](https://docs.python.org/3/library/venv.html) or 
 [venv](https://docs.python.org/3/library/venv.html).
 
@@ -15,11 +15,8 @@ e.g., using [conda](https://docs.python.org/3/library/venv.html) or
 On Windows, download [OpenHRV.exe](https://github.com/JanCBrammer/OpenHRV/releases/latest)
 and run it, no installation required.
 
-Alternatively, on both Linux and Windows you can
-clone the repository and run [app.py](https://github.com/JanCBrammer/OpenHRV/blob/main/openhrv/app.py)
-with `python -m openhrv.app` in a Python environment that contains the dependencies specified in 
-[pyproject.toml](https://github.com/JanCBrammer/OpenHRV/blob/main/pyproject.toml)
-(`dev` or `build` dependencies are not required).
+Alternatively, on both Linux and Windows you can clone the repository, run `pip install .`,
+and start the application with `python -m openhrv.app` (or alternatively, with the shortcut `start_openhrv`).
 
 ### MacOS
 :warning: Those instructions aren't verified for releases > [0.2.0](https://github.com/JanCBrammer/OpenHRV/releases/tag/v0.2.0) :warning:
