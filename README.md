@@ -7,8 +7,10 @@ Polar chest straps (H7, H9, H10).
 
 ## Installation
 It is highly recommended to install the project in a virtual Python environment,
-e.g., using [conda](https://docs.python.org/3/library/venv.html) or 
+e.g., using [conda](https://docs.python.org/3/library/venv.html) or
 [venv](https://docs.python.org/3/library/venv.html).
+The required Python version is specified in
+[pyproject.toml](https://github.com/JanCBrammer/OpenHRV/blob/main/pyproject.toml).
 
 
 ### Linux, Windows
