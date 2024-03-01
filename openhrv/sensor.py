@@ -76,7 +76,7 @@ class SensorClient(QObject):
         return get_sensor_remote_address(self.client)
 
     def connect_client(self, sensor: QBluetoothDeviceInfo):
-        if self.client:
+        if self.client is not None:
             msg = (
                 f"Currently connected to sensor at {self._sensor_address()}."
                 " Please disconnect before (re-)connecting to (another) sensor."
@@ -94,25 +94,25 @@ class SensorClient(QObject):
         self.client.connectToDevice()
 
     def disconnect_client(self):
-        if self.hr_notification and self.hr_service:
+        if self.hr_notification is not None and self.hr_service is not None:
             if not self.hr_notification.isValid():
                 return
             print("Unsubscribing from HR service.")
             self.hr_service.writeDescriptor(
                 self.hr_notification, self.DISABLE_NOTIFICATION
             )
-        if self.client:
+        if self.client is not None:
             self.status_update.emit(
                 f"Disconnecting from sensor at {self._sensor_address()}."
             )
             self.client.disconnectFromDevice()
 
     def _discover_services(self):
-        if self.client:
+        if self.client is not None:
             self.client.discoverServices()
 
     def _connect_hr_service(self):
-        if not self.client:
+        if self.client is None:
             return
         hr_service: list[QBluetoothUuid] = [
             s for s in self.client.services() if s == self.HR_SERVICE
@@ -133,7 +133,7 @@ class SensorClient(QObject):
     def _start_hr_notification(self, state: QLowEnergyService.ServiceState):
         if state != QLowEnergyService.RemoteServiceDiscovered:
             return
-        if not self.hr_service:
+        if self.hr_service is None:
             return
         hr_char: QLowEnergyCharacteristic = self.hr_service.characteristic(
             self.HR_CHARACTERISTIC
@@ -153,7 +153,7 @@ class SensorClient(QObject):
         self._remove_client()
 
     def _remove_service(self):
-        if not self.hr_service:
+        if self.hr_service is None:
             return
         try:
             self.hr_service.deleteLater()
@@ -164,7 +164,7 @@ class SensorClient(QObject):
             self.hr_notification = None
 
     def _remove_client(self):
-        if not self.client:
+        if self.client is None:
             return
         try:
             self.client.disconnected.disconnect()
