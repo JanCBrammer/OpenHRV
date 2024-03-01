@@ -17,8 +17,25 @@ The required Python version is specified in
 On Windows, download [OpenHRV.exe](https://github.com/JanCBrammer/OpenHRV/releases/latest)
 and run it, no installation required.
 
-Alternatively, on both Linux and Windows you can clone the repository, run `pip install .`,
-and start the application with `python -m openhrv.app` (or alternatively, with the shortcut `start_openhrv`).
+Alternatively, on both Linux and Windows you can clone the repository, and subsequently run
+```
+pip install .
+```
+in the root of the repository. Alternatively, you can skip cloning by running
+```
+pip install git+https://github.com/JanCBrammer/OpenHRV.git
+```
+You can now start the application with
+
+```
+python -m openhrv.app
+```
+
+or alternatively, with the shortcut
+
+```
+start_openhrv
+```
 
 ### MacOS
 :warning: Those instructions aren't verified for releases > [0.2.0](https://github.com/JanCBrammer/OpenHRV/releases/tag/v0.2.0) :warning:
