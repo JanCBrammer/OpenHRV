@@ -84,7 +84,7 @@ class SensorClient(QObject):
             self.status_update.emit(msg)
             return
         self.status_update.emit(
-            f"Connecting to sensor at {get_sensor_address(sensor)}."
+            f"Connecting to sensor at {get_sensor_address(sensor)} (this might take a while)."
         )
         self.client = QLowEnergyController.createCentral(sensor)
         self.client.errorOccurred.connect(self._catch_error)
