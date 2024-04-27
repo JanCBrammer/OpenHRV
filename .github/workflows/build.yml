@@ -1,4 +1,4 @@
-name: build with PyInstaller
+name: build
 
 on:
   workflow_dispatch:
@@ -8,60 +8,56 @@ on:
 
 jobs:
 
-  build_windows:
+  build:
 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
 
     - uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
+    - uses: actions/setup-python@v4
       with:
           python-version: "3.11"
 
     - name: Install dependencies
-      shell: powershell
       run: |
           python -m pip install --upgrade pip
           python -m pip install -e .[build]
 
     - name: release build
       if: github.event_name == 'release'
-      shell: powershell
       run: |
-        pyinstaller --onefile --icon=docs/logo.ico --name=OpenHRV openhrv/app.py --windowed
+        pyinstaller --onefile --icon=docs/logo.ico --name=OpenHRV.bin openhrv/app.py --windowed
 
     - name: manual build
       if: github.event_name == 'workflow_dispatch'
-      shell: powershell
       run: |
-        pyinstaller --onefile --icon=docs/logo.ico --name=OpenHRV openhrv/app.py
+        pyinstaller --onefile --icon=docs/logo.ico --name=OpenHRV.bin openhrv/app.py
 
-    - name: upload exe artifact
-      uses: actions/upload-artifact@v3
+    - name: upload build artifact
+      uses: actions/upload-artifact@v4
       with:
-        name: OpenHRV_windows
-        path: dist/OpenHRV.exe
+        name: OpenHRV
+        path: dist/OpenHRV.bin
 
-  upload_windows:    # separate job on Ubuntu since JasonEtco/upload-to-release@master only runs on Linux
+  release:
 
     if: github.event_name == 'release'
-    needs: build_windows
+    needs: build
 
     runs-on: ubuntu-latest
 
     steps:
 
-    - name: download exe
-      uses: actions/download-artifact@v3
+    - name: download build artifact
+      uses: actions/download-artifact@v4
       with:
-        name: OpenHRV_windows
+        name: OpenHRV
 
-    - name: upload exe to release
-      uses: JasonEtco/upload-to-release@master
-      with:
-        args: OpenHRV.exe application/octet-stream
+    - name: upload build artifact to release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    # token generated implicitly
+      # See https://cli.github.com/manual/gh_release_upload.
+      run: |
+        gh release upload ${{ github.ref_name }} OpenHRV.bin

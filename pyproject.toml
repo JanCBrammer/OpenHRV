@@ -14,6 +14,9 @@ extend-exclude = "openhrv/resources.py"
 [tool.mypy]
 check_untyped_defs = true
 
+[tool.setuptools.packages.find]
+where = ["openhrv"]
+
 [project.scripts]
 # command line entry points
 start_openhrv = "openhrv.app:main"
