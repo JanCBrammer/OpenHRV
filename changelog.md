@@ -1,14 +1,15 @@
 # Changelog
 
-### Version 0.2.1 (Month dd, yyyy)
-+ bugfix: Run on MacOS with PyInstaller in order to deal with Bluetooth permissions
-+ enhancements: removed PyQtGraph and NumPy dependencies
-+ enhancements: updated dependencies to latest version
-+ enhancements: show version in GUI
+### Version 1.0.0 (April 29 2024)
++ enhancement: Added docs on building macOS with PyInstaller in order to deal with Bluetooth permissions.
++ enhancements: Show version in GUI.
++ enhancements: Removed PyQtGraph and NumPy dependencies.
++ enhancements: Bumped PySide6 to version 6.7.0.
++ enhancements: Bumped Python to version 3.11.
 
 ### Version 0.2.0 (April 23, 2022)
-+ enhancement: removed recording of Redis channels (removed Redis dependency).
-+ enhancement: handling Bluetooth connection with QtBluetooth instead of bleak (removed bleak dependency).
++ enhancement: Removed recording of Redis channels (removed Redis dependency).
++ enhancement: Handling Bluetooth connection with QtBluetooth instead of bleak (removed bleak dependency).
 
 ### Version 0.1.3 (January 08, 2022)
 + enhancement: Improved Bluetooth connection.

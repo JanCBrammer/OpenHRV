@@ -41,23 +41,10 @@ jobs:
         name: OpenHRV
         path: dist/OpenHRV.bin
 
-  release:
-
-    if: github.event_name == 'release'
-    needs: build
-
-    runs-on: ubuntu-latest
-
-    steps:
-
-    - name: download build artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: OpenHRV
-
     - name: upload build artifact to release
+      if: github.event_name == 'release'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}    # token generated implicitly
       # See https://cli.github.com/manual/gh_release_upload.
       run: |
-        gh release upload ${{ github.ref_name }} OpenHRV.bin
+        gh release upload ${{ github.ref_name }} dist/OpenHRV.bin

@@ -6,25 +6,25 @@ A desktop application for heart rate variability (HRV) biofeedback training with
 Polar chest straps (H7, H9, H10).
 
 ## Installation
+
 It is highly recommended to install the project in a virtual Python environment,
 e.g., using [conda](https://docs.python.org/3/library/venv.html) or
 [venv](https://docs.python.org/3/library/venv.html).
 The required Python version is specified in
 [pyproject.toml](https://github.com/JanCBrammer/OpenHRV/blob/main/pyproject.toml).
 
+In your Python environment, clone the repository, and subsequently run
 
-### Linux, Windows
-On Windows, download [OpenHRV.exe](https://github.com/JanCBrammer/OpenHRV/releases/latest)
-and run it, no installation required.
-
-Alternatively, on both Linux and Windows you can clone the repository, and subsequently run
 ```
 pip install .
 ```
+
 in the root of the repository. Alternatively, you can skip cloning by running
+
 ```
 pip install git+https://github.com/JanCBrammer/OpenHRV.git
 ```
+
 You can now start the application with
 
 ```
@@ -36,17 +36,12 @@ or alternatively, with the shortcut
 ```
 start_openhrv
 ```
+I tested `OpenHRV` on Ubuntu 22.04. It _should_ run on Windows and macOS as well, however, I haven't confirmed that myself.
+If you have problems running `OpenHRV` have a look at [docs/troubleshooting.md](docs/troubleshooting.md).
 
-### MacOS
-:warning: Those instructions aren't verified for releases > [0.2.0](https://github.com/JanCBrammer/OpenHRV/releases/tag/v0.2.0) :warning:
+## Ubuntu executable
 
-Clone the repository and run `pyinstaller mac_os_app.spec --clean --noconfirm` from the project root
-in a Python environment that contains the dependencies specified in 
-[pyproject.toml](https://github.com/JanCBrammer/OpenHRV/blob/main/pyproject.toml) (including `build` dependencies).
-A MacOS app bundle will be created at `OpenHRV/dist/openhrv.app`.
-This can be loaded directly by clicking on it, or if you wish to see terminal debug messages,
-you can execute from the project root `./dist/openhrv.app/Contents/MacOS/app`.
-The first run takes extra time. 
+On Ubuntu, download and run [OpenHRV.bin](https://github.com/JanCBrammer/OpenHRV/releases/latest), no installation required.
 
 ## User Guide
 

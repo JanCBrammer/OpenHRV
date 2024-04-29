@@ -1,6 +1,6 @@
 [project]
 name = "OpenHRV"
-version = "0.2.0"
+version = "1.0.0"
 requires-python = "== 3.11.*"
 dependencies = ["PySide6 == 6.7.0"]
 
@@ -14,9 +14,6 @@ extend-exclude = "openhrv/resources.py"
 [tool.mypy]
 check_untyped_defs = true
 
-[tool.setuptools.packages.find]
-where = ["openhrv"]
-
-[project.scripts]
+[project.gui-scripts]
 # command line entry points
-start_openhrv = "openhrv.app:main"
+openhrv = "openhrv.app:main"
