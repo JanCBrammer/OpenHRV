@@ -37,11 +37,12 @@ def valid_address(address: str) -> bool:
     system = platform.system()
     regex = ""
     if system in ["Linux", "Windows"]:
-        regex = "[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\\1[0-9a-f]{2}){4}$"
+        regex = r"[0-9a-f]{2}([-:]?)[0-9a-f]{2}(\1[0-9a-f]{2}){4}$"
     elif system == "Darwin":
-        regex = "[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$"  # Polar uuid not necessarily RFC4122 compliant
+        # Allow for any valid UUID
+        regex = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 
-    return bool(re.compile(regex).match(address.lower()))
+    return bool(re.compile(regex, re.IGNORECASE).match(address))
 
 
 def valid_path(path: str) -> bool:
