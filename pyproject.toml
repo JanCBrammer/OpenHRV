@@ -1,8 +1,10 @@
 [project]
 name = "OpenHRV"
 version = "1.0.0"
-requires-python = "== 3.11.*"
-dependencies = ["PySide6 == 6.7.0"]
+# Support all Python versions that are compatible with the PySide6 version.
+# See compatibility matrix at https://wiki.qt.io/Qt_for_Python.
+requires-python = ">= 3.9"
+dependencies = ["PySide6 >= 6.8"]
 
 [project.optional-dependencies]
 dev = ["snakeviz"]
