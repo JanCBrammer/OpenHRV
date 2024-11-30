@@ -1,0 +1,26 @@
+// https://containers.dev/implementors/json_reference/
+{
+    "name": "OpenHRV",
+    "image": "python:3.11",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-python.mypy-type-checker",
+                "KevinRose.vsc-python-indent",
+                "streetsidesoftware.code-spell-checker",
+                "tamasfe.even-better-toml",
+                "eamodio.gitlens",
+                "GitHub.copilot",
+                "charliermarsh.ruff"
+            ],
+            "settings": {
+                "[python]": {
+                    "editor.formatOnSave": true,
+                    "editor.defaultFormatter": "charliermarsh.ruff"
+                }
+            }
+        }
+    }
+}

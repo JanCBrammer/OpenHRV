@@ -1,5 +1,10 @@
 # Troubleshooting
 
+## Linux
+You might have to install (some of) the dependencies for connecting to the X11 server:
+- https://doc.qt.io/qt-6/linux-requirements.html
+- https://doc.qt.io/qt-6/linux.html
+
 ## Windows
 `OpenHRV` has been tested on Windows 10, but there seem to be Bluetooth problems on Windows 11.
 Have a look at the issues (open and closed) labeled with `Windows`.
