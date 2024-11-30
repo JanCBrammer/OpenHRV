@@ -1,7 +1,7 @@
 // https://containers.dev/implementors/json_reference/
 {
     "name": "OpenHRV",
-    "image": "python:3.11",
+    "image": "python:3.12",
     "customizations": {
         "vscode": {
             "extensions": [
