@@ -1,5 +1,10 @@
 # Troubleshooting
 
+If you have trouble connecting (or staying connected) to your Polar sensor, try (a combination of) the following:
+- Turn Bluetooth off and on again.
+- Un-pair and re-pair the sensor.
+- Reset the sensor (https://support.polar.com/en/support/how_to_reset_my_heart_rate_sensor).
+
 ## Linux
 You might have to install (some of) the dependencies for connecting to the X11 server:
 - https://doc.qt.io/qt-6/linux-requirements.html
