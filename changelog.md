@@ -1,11 +1,17 @@
 # Changelog
 
+### Version 1.0.1 (November 30 2024)
++ enhancement: Relaxed Python version constraints.
++ enhancement: Bumped PySide6 to version 6.8.
++ enhancement: Bumped Python to version 3.12.
++ bugfix: Improved sensor UUID validation (#41).
+
 ### Version 1.0.0 (April 29 2024)
 + enhancement: Added docs on building macOS with PyInstaller in order to deal with Bluetooth permissions.
-+ enhancements: Show version in GUI.
-+ enhancements: Removed PyQtGraph and NumPy dependencies.
-+ enhancements: Bumped PySide6 to version 6.7.0.
-+ enhancements: Bumped Python to version 3.11.
++ enhancement: Show version in GUI.
++ enhancement: Removed PyQtGraph and NumPy dependencies.
++ enhancement: Bumped PySide6 to version 6.7.0.
++ enhancement: Bumped Python to version 3.11.
 
 ### Version 0.2.0 (April 23, 2022)
 + enhancement: Removed recording of Redis channels (removed Redis dependency).
