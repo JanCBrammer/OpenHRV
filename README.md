@@ -34,7 +34,7 @@ python -m openhrv.app
 or alternatively, with the shortcut
 
 ```
-start_openhrv
+openhrv
 ```
 I tested `OpenHRV` on Ubuntu 24.04. It _should_ run on Windows and macOS as well, however, I haven't confirmed that myself.
 If you have problems running `OpenHRV` have a look at [docs/troubleshooting.md](docs/troubleshooting.md).
