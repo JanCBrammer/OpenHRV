@@ -34,7 +34,7 @@ class SensorScanner(QObject):
         polar_sensors: list[QBluetoothDeviceInfo] = [
             d
             for d in self.scanner.discoveredDevices()
-            if "Polar" in str(d.name()) and d.rssi() <= 0
+            if ("Polar" in str(d.name()) or "Decathlon Dual HR" in str(d.name())) and d.rssi() <= 0
         ]  # https://www.mokoblue.com/measures-of-bluetooth-rssi/
         if not polar_sensors:
             self.status_update.emit("Couldn't find sensors.")
