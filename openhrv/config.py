@@ -27,6 +27,8 @@ MEANHRV_BUFFER_SIZE: Final[int] = ceil(
     MEANHRV_HISTORY_DURATION / (MIN_IBI / 1000)
 )  # samples
 
+COMPATIBLE_SENSORS: Final[list[str]] = ["Polar", "Decathlon Dual HR"]
+
 
 def tick_to_breathing_rate(tick: int) -> float:
     return (tick + 8) / 2  # scale tick to [4, 7], step .5

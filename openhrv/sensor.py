@@ -11,6 +11,7 @@ from PySide6.QtBluetooth import (
 from math import ceil
 from typing import Union
 from openhrv.utils import get_sensor_address, get_sensor_remote_address
+from openhrv.config import COMPATIBLE_SENSORS
 
 
 class SensorScanner(QObject):
@@ -31,16 +32,16 @@ class SensorScanner(QObject):
         self.scanner.start()
 
     def _handle_scan_result(self):
-        polar_sensors: list[QBluetoothDeviceInfo] = [
+        sensors: list[QBluetoothDeviceInfo] = [
             d
             for d in self.scanner.discoveredDevices()
-            if ("Polar" in str(d.name()) or "Decathlon Dual HR" in str(d.name())) and d.rssi() <= 0
+            if (any(cs in d.name() for cs in COMPATIBLE_SENSORS)) and (d.rssi() <= 0)
         ]  # https://www.mokoblue.com/measures-of-bluetooth-rssi/
-        if not polar_sensors:
+        if not sensors:
             self.status_update.emit("Couldn't find sensors.")
             return
-        self.sensor_update.emit(polar_sensors)
-        self.status_update.emit(f"Found {len(polar_sensors)} sensor(s).")
+        self.sensor_update.emit(sensors)
+        self.status_update.emit(f"Found {len(sensors)} sensor(s).")
 
     def _handle_scan_error(self, error):
         print(error)
@@ -48,7 +49,7 @@ class SensorScanner(QObject):
 
 class SensorClient(QObject):
     """
-    Connect to a Polar sensor that acts as a Bluetooth server / peripheral.
+    Connect to an ECG sensor that acts as a Bluetooth server / peripheral.
     On Windows, the sensor must already be paired with the machine running
     OpenHRV. Pairing isn't implemented in Qt6.
 
