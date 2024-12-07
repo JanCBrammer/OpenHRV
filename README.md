@@ -2,8 +2,11 @@
 
 # OpenHRV
 
-A desktop application for heart rate variability (HRV) biofeedback training with
-Polar chest straps (H7, H9, H10).
+A desktop application for heart rate variability (HRV) biofeedback training with ECG chest straps.
+
+## Compatible sensors
+- Polar H7, H9, H10
+- Decathlon Dual HR (model ZT26D)
 
 ## Installation
 
@@ -46,10 +49,10 @@ On Ubuntu, download and run [OpenHRV.bin](https://github.com/JanCBrammer/OpenHRV
 ## User Guide
 
 ### Connect your ECG sensor
-First make sure your Polar sensor (H7, H9, or H10) is paired with your computer
+First make sure the sensor is paired with your computer
 (i.e., find and pair the sensor in your computer's Bluetooth settings).
 Then search the sensor in **OpenHRV** by clicking `Scan`. The addresses of all
-paired Polar sensors show up in the drop-down menu. Select your sensor from the
+paired sensors show up in the drop-down menu. Select your sensor from the
 drop-down menu and click `Connect` in order to establish a connection. You can
 disconnect the sensor anytime by clicking `Disconnect`. Disconnecting is useful
 if you want to connect to another sensor, or if an error occurs with the connection.
