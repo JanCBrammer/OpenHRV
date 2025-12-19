@@ -1,5 +1,8 @@
 # Changelog
 
+### Version 1.1.1 (December 19 2025)
++ enhancement: Bumped PySide6 to version 6.10.
+
 ### Version 1.1.0 (December 15 2024)
 + enhancement: Computing HRV as exponentially weighted moving average (https://en.wikipedia.org/wiki/Exponential_smoothing).
 + enhancement: Accepting Decathlon HR sensor (thanks S73ph4n).
