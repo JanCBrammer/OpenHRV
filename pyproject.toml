@@ -9,9 +9,15 @@ dependencies = ["PySide6 >= 6.10"]
 [project.optional-dependencies]
 dev = ["snakeviz"]
 build = ["pyinstaller"]
+test = ["pytest"]
 
 [tool.mypy]
 check_untyped_defs = true
+
+[tool.pytest.ini_options]
+# Collect tests from test/; conftest.py puts that dir on sys.path so the smoke
+# test can import the existing mock sensor as a top-level `app` module.
+testpaths = ["test"]
 
 [project.gui-scripts]
 # command line entry points
