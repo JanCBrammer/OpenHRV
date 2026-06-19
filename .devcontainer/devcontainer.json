@@ -22,5 +22,6 @@
                 }
             }
         }
-    }
+    },
+    "postCreateCommand": "./.devcontainer/post_create_commands.sh"
 }
