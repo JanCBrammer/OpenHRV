@@ -89,3 +89,31 @@ an HRV of 500 msec". Try to increase HRV relative to what you have achieved befo
 and be aware that it can take a fair bit of practice to improve.
 
 ![biofeedback_demo](https://github.com/JanCBrammer/OpenHRV/raw/main/docs/biofeedback_demo.gif)
+
+### Record a session
+You can record a session to a `.csv` file using the controls in the `Recording`
+panel. Click `Start` and choose where to save the file. The dialog suggests a
+name based on the current date and time (e.g. `OpenHRV_2025-12-19-14-30.csv`);
+recording only begins if the file doesn't exist yet, so each session is written
+to its own file. Click `Save` to stop recording and close the file. The session
+is also saved automatically when you close **OpenHRV** while a recording is running.
+
+While recording, **OpenHRV** appends one row per data point. Each row has three
+columns, `event,value,timestamp`, where `timestamp` is in ISO 8601 format. The
+following events are logged:
+
+| event | value |
+| --- | --- |
+| `InterBeatInterval` | latest inter-beat interval (msec) |
+| `HeartRateVariability` | latest (smoothed) HRV (msec) |
+| `HrvTarget` | HRV target whenever you move the `Target` slider |
+| `PacerRate` | breathing rate whenever you move the `Rate` slider |
+| `Sensors` | sensor that became available or connected |
+| `Annotation` | a note you added (see below) |
+
+#### Annotate a recording
+Use the annotation field next to the `Annotate` button to mark moments of
+interest in a recording, for example the start of an exercise or a change in how
+you feel. Type a label (or pick a previously used one from the drop-down) and
+click `Annotate` to write an `Annotation` row with your label and the current
+timestamp. Annotations are only recorded while a recording is running.
