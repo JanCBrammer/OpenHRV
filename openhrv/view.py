@@ -276,6 +276,10 @@ class View(QMainWindow):
         self.annotation.setDuplicatesEnabled(False)
         self.annotation_button = QPushButton("Annotate")
         self.annotation_button.clicked.connect(self.emit_annotation)
+
+        self.clear_button = QPushButton("Clear plots")
+        self.clear_button.clicked.connect(self.clear_plots)
+
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
@@ -325,6 +329,7 @@ class View(QMainWindow):
         # row, column, rowspan, columnspan
         self.recording_config.addWidget(self.annotation, 1, 0, 1, 2)
         self.recording_config.addWidget(self.annotation_button, 1, 2)
+        self.recording_config.addWidget(self.clear_button, 2, 0, 1, 3)
         self.recording_panel = QGroupBox("Recording")
         self.recording_panel.setLayout(self.recording_config)
         self.hlayout1.addWidget(self.recording_panel, stretch=25)
@@ -381,6 +386,17 @@ class View(QMainWindow):
 
     def plot_hrv(self, hrv: NamedSignal):
         self.hrv_widget.update_series(*hrv.value)
+
+    def clear_plots(self):
+        """Reset the IBI and HRV plots for a new session (issue #11).
+
+        Redraws the series directly instead of routing through the model's
+        update signals, so clearing the live view never writes baseline samples
+        to an ongoing recording.
+        """
+        self.model.reset_buffers()
+        self.ibis_widget.update_series(self.model.ibis_seconds, self.model.ibis_buffer)
+        self.hrv_widget.update_series(self.model.hrv_seconds, self.model.hrv_buffer)
 
     def list_addresses(self, addresses: NamedSignal):
         self.address_menu.clear()

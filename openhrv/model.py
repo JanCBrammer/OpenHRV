@@ -28,6 +28,15 @@ class Model(QObject):
 
     def __init__(self):
         super().__init__()
+        self.sensors: list[QBluetoothDeviceInfo] = []
+        self.breathing_rate: float = float(MAX_BREATHING_RATE)
+        self.hrv_target: int = math.ceil((MIN_HRV_TARGET + MAX_HRV_TARGET) / 2)
+        self.reset_buffers()
+
+    def reset_buffers(self):
+        """Reset the IBI/HRV data buffers and derived state to their initial
+        values, e.g. to start a new session (issue #11). Sensor selection and
+        settings (breathing rate, HRV target) are preserved."""
         # Once a bounded length deque is full, when new items are added,
         # a corresponding number of items are discarded from the opposite end.
         self.ibis_buffer: deque[int] = deque([1000] * IBI_BUFFER_SIZE, IBI_BUFFER_SIZE)
@@ -44,9 +53,6 @@ class Model(QObject):
         # - https://en.wikipedia.org/wiki/Exponential_smoothing
         # - http://nestedsoftware.com/2018/04/04/exponential-moving-average-on-streaming-data-4hhl.24876.html
         self.ewma_hrv: float = 1.0
-        self.sensors: list[QBluetoothDeviceInfo] = []
-        self.breathing_rate: float = float(MAX_BREATHING_RATE)
-        self.hrv_target: int = math.ceil((MIN_HRV_TARGET + MAX_HRV_TARGET) / 2)
         self._last_ibi_phase: int = -1
         self._last_ibi_extreme: int = 0
         self._duration_current_phase: int = 0

@@ -67,3 +67,21 @@ def test_model_validates_outlier_ibi(qapp):
     # A physiologically plausible IBI passes through unchanged.
     model.update_ibis_buffer(900)
     assert model.ibis_buffer[-1] == 900
+
+
+def test_model_reset_buffers_restores_baseline(qapp):
+    baseline = Model()
+    model = Model()
+    # Push real data so the buffers and derived state diverge from baseline.
+    for ibi in (850, 950, 1050, 900, 1000):
+        model.update_ibis_buffer(ibi)
+    assert list(model.ibis_buffer) != list(baseline.ibis_buffer)
+
+    model.reset_buffers()
+
+    assert list(model.ibis_buffer) == list(baseline.ibis_buffer)
+    assert list(model.hrv_buffer) == list(baseline.hrv_buffer)
+    assert list(model.ibis_seconds) == list(baseline.ibis_seconds)
+    assert list(model.hrv_seconds) == list(baseline.hrv_seconds)
+    assert model.ewma_hrv == baseline.ewma_hrv
+    assert model._duration_current_phase == 0
